@@ -15,8 +15,8 @@ int main(int argc, char **argv)
   {
     // updating all the ros msgs
     ros::spinOnce();
-    // running the localizer
-    // node.run();
+    // running the node
+    node.run();
     rate.sleep();
   }
   ros::shutdown();

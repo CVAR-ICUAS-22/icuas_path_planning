@@ -12,6 +12,7 @@ set(PROJECT_DEPENDENCIES
   cv_bridge
   tf
   laser_geometry
+  image_transport
   # Eigen3
   # mav_msgs
   # tf2_ros
