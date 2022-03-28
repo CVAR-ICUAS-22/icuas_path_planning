@@ -12,7 +12,7 @@ LaserscanToMap::LaserscanToMap() : it_(nh_)
   laser_map_ = cv::Mat(img_h_, img_w_, CV_8UC1, cv::Scalar(0));
   grid_size_.width = int((img_w_ / OCC_GRID_SIZE));
   grid_size_.height = int((img_h_ / OCC_GRID_SIZE));
-  occupancy_map_ = cv::Mat(grid_size_.height, grid_size_.width, CV_8UC1);
+  occupancy_map_ = cv::Mat::ones(grid_size_.height, grid_size_.width, CV_8UC1) * 255;
 }
 
 LaserscanToMap::~LaserscanToMap() {}
@@ -48,41 +48,80 @@ void LaserscanToMap::generateOccupancyMap()
   cv::Point2i img_drone_position;
   img_drone_position = coord2img(drone_position_.x, drone_position_.y, img_h_, img_w_);
 
-  cv::threshold(laser_map_, binary_map, 100, 255, cv::THRESH_BINARY_INV);
   // Generate Distance Map
+  cv::threshold(laser_map_, binary_map, 100, 255, cv::THRESH_BINARY_INV);
   cv::distanceTransform(binary_map, distance_map, cv::DIST_L2, 3);
   dist_normalized_map = distance_map / max_dist;               // normalize distance map respect to the max dist
   dist_normalized_map.setTo(1.0f, dist_normalized_map > 1.0f); // clip image to 1.0
 
-  // Generate Occupancy Map
-  // cv::Mat occupancy_map;
-  // cv::threshold(dist_normalized_map, binary_occupancy_map, 0.5, 1, cv::THRESH_BINARY);
-  // cv::Size grid_size(int((img_w_ / OCC_GRID_SIZE)), int((img_h_ / OCC_GRID_SIZE)));
-  // cv::resize(binary_occupancy_map, occupancy_map, grid_size, cv::INTER_MAX);
-  // cv::Mat occupancy_map(grid_size.height, grid_size.width, CV_8UC1);
-  // cv::threshold(binary_occupancy_map, occupancy_map, 0.5, 255, cv::THRESH_BINARY);
+  // Generate Occupancy Map (option 1)
+  // cv::Mat binary_occupancy_map;
+  // cv::resize(dist_normalized_map, binary_occupancy_map, grid_size_, cv::INTER_MAX);
+  // occupancy_map_.setTo(255, binary_occupancy_map > 0.9);
+  // occupancy_map_.setTo(0, binary_occupancy_map <= 0.9);
 
-  // TODO: MAKE CONVOLUTION TO SOLVE THIS AND EVERYBODY WILL BE HAPPY
-  // TODO: Check changes
-  cv::Mat binary_occupancy_map;
-  cv::resize(dist_normalized_map, binary_occupancy_map, grid_size_, cv::INTER_NEAREST);
+  // Generate Occupancy Map (option 2)
+  // cv::Mat binary_distance_map, binary_occupancy_map;
+  // cv::threshold(dist_normalized_map, binary_distance_map, 0.5, 1, cv::THRESH_BINARY);
+  // cv::resize(binary_distance_map, binary_occupancy_map, grid_size_, cv::INTER_MAX);
+  // occupancy_map_.setTo(255, binary_occupancy_map > 0.9);
+  // occupancy_map_.setTo(0, binary_occupancy_map <= 0.9);
 
-  // MANUAL THRESHOLDING
-  occupancy_map_.setTo(255, binary_occupancy_map > 0.9);
-  occupancy_map_.setTo(0, binary_occupancy_map <= 0.9);
+  // TODO: Generate Occupancy Map (option 3): MAKE CONVOLUTION TO SOLVE THIS AND EVERYBODY WILL BE HAPPY
+  cv::Mat binary_distance_map, binary_occupancy_map;
+  cv::threshold(dist_normalized_map, binary_distance_map, 0.5, 1, cv::THRESH_BINARY);
+  // cv::imshow("binary_distance_map", binary_distance_map);
+  // cv::waitKey(0);
 
-  cv::Mat diff;
-  cv::absdiff(occupancy_map_, last_occ_map_sent, diff);
-  if (cv::countNonZero(diff) > 0)
+  // cv::threshold(dist_normalized_map, binary_distance_map, 0.5, 1, cv::THRESH_BINARY);
+  for (int i = 0; i < grid_size_.height; i++)
   {
-    ROS_INFO("New occupancy map available");
-    send_occ_map_ = true;
-    occupancy_map_.copyTo(last_occ_map_sent);
+    for (int j = 0; j < grid_size_.width; j++)
+    {
+      int current_value = occupancy_map_.at<uchar>(i, j);
+      if (current_value > 1) // Just for no occuped cells
+      {
+        int h_step = int(img_h_ / grid_size_.height);
+        int w_step = int(img_w_ / grid_size_.width);
+        cv::Mat submatrix = binary_distance_map(cv::Range(h_step * i, h_step * (i + 1)), cv::Range(w_step * j, w_step * (j + 1)));
+        // ROS_INFO("Submatrix size: %d, %d", submatrix.size[0], submatrix.size[1]);
+        // cv::imshow("submatrix", submatrix);
+        // cv::waitKey(0);
 
+        double min_value, max_value;
+        cv::minMaxLoc(submatrix, &min_value, &max_value);
+
+        if (min_value < 1)
+        {
+          occupancy_map_.at<uchar>(i, j) = 0;
+          send_occ_map_ = true;
+        }
+      }
+    }
+  }
+
+  if (send_occ_map_)
+  {
     // Code drone position in map
+    // TODO: COPY THE MAP
     occupancy_map_.at<uchar>(0, 0) = int((img_drone_position.x / OCC_GRID_SIZE)); // x
     occupancy_map_.at<uchar>(0, 1) = int((img_drone_position.y / OCC_GRID_SIZE)); // y
+    ROS_INFO("New occupancy map available");
   }
+
+  // // Check occupancy map changes
+  // cv::Mat diff;
+  // cv::absdiff(occupancy_map_, last_occ_map_sent, diff);
+  // if (cv::countNonZero(diff) > 0)
+  // {
+  //   ROS_INFO("New occupancy map available");
+  //   send_occ_map_ = true;
+  //   occupancy_map_.copyTo(last_occ_map_sent);
+
+  //   // Code drone position in map
+  //   occupancy_map_.at<uchar>(0, 0) = int((img_drone_position.x / OCC_GRID_SIZE)); // x
+  //   occupancy_map_.at<uchar>(0, 1) = int((img_drone_position.y / OCC_GRID_SIZE)); // y
+  // }
 
   // auto drone_x = occupancy_map_.at<uchar>(0, 0);
   // auto drone_y = occupancy_map_.at<uchar>(0, 1);
