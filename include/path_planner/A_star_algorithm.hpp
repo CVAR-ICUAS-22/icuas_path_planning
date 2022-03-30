@@ -46,13 +46,13 @@
 #include <unordered_map>
 #include <vector>
 
-
-static int convertPointToInt(const cv::Point2i& point) { return point.x * 1000 + point.y; };
+static int convertPointToInt(const cv::Point2i &point) { return point.x * 1000 + point.y; };
 
 class Node;
 using NodePtr = std::shared_ptr<Node>;
 
-class Node {
+class Node
+{
   double g_cost_;
   double h_cost_;
   double f_cost_;
@@ -60,9 +60,10 @@ class Node {
   cv::Point2i coordinates_;
   NodePtr parent_ptr_;
 
-  public:
-  Node(const cv::Point2i& coords, const NodePtr& parent_ptr, const cv::Point2i goal)
-      : coordinates_(coords), parent_ptr_(parent_ptr) {
+public:
+  Node(const cv::Point2i &coords, const NodePtr &parent_ptr, const cv::Point2i goal)
+      : coordinates_(coords), parent_ptr_(parent_ptr)
+  {
     computeCosts(goal);
     // std::cout << "new node created: "<< coords << std::endl;
   };
@@ -74,21 +75,30 @@ class Node {
 
   operator int() const { return convertPointToInt(coordinates_); }
 
-  double computeCosts(const cv::Point2i& goal) {
-    const cv::Point2i& point = get_coordinates();
+  double computeCosts(const cv::Point2i &goal)
+  {
+    const cv::Point2i &point = get_coordinates();
     h_cost_ = std::sqrt(std::pow(point.x - goal.x, 2) + std::pow(point.y - goal.y, 2));
-    if (parent_ptr_ == nullptr) {
+    if (parent_ptr_ == nullptr)
+    {
       g_cost_ = 0;
-    } else {
+    }
+    else
+    {
       g_cost_ = parent_ptr_->get_g_cost() + 1;
+      if (!(parent_ptr_->get_coordinates().x == point.x || parent_ptr_->get_coordinates().y == point.y))
+      {
+        g_cost_ += 1;
+      }
     }
     f_cost_ = g_cost_ + h_cost_;
     return f_cost_;
   };
 };
 
-class AStarPlanner {
-  private:
+class AStarPlanner
+{
+private:
   cv::Mat ocuppancy_grid_;
   cv::Point2i goal_;
   cv::Point2i origin_point_;
@@ -99,21 +109,30 @@ class AStarPlanner {
   std::vector<cv::Point2i> valid_movements_;
 
   // Pseudocode A* algorithm
-  public:
-  AStarPlanner() {
+public:
+  AStarPlanner()
+  {
     valid_movements_.clear();
+    valid_movements_.reserve(8);
     valid_movements_.emplace_back(-1, -1);
     valid_movements_.emplace_back(-1, 0);
     valid_movements_.emplace_back(-1, 1);
+    valid_movements_.emplace_back(0, -1);
+    valid_movements_.emplace_back(0, 1);
+    valid_movements_.emplace_back(1, -1);
+    valid_movements_.emplace_back(1, 0);
+    valid_movements_.emplace_back(1, 1);
   }
 
-  void setOcuppancyGrid(const cv::Mat& mat) { ocuppancy_grid_ = mat.clone(); }
-  void setOriginPoint(const cv::Point2i& point) { origin_point_ = point; }
-  void setGoal(const cv::Point2i& point) { goal_ = point; }
+  void setOcuppancyGrid(const cv::Mat &mat) { ocuppancy_grid_ = mat.clone(); }
+  void setOriginPoint(const cv::Point2i &point) { origin_point_ = point; }
+  void setGoal(const cv::Point2i &point) { goal_ = point; }
 
-  private:
-  void addNeighborsToVisit(const NodePtr& node) {
-    for (auto& movement : valid_movements_) {
+private:
+  void addNeighborsToVisit(const NodePtr &node)
+  {
+    for (auto &movement : valid_movements_)
+    {
       cv::Point2i new_node_position = node->get_coordinates() + movement;
       // Check if the new node is in the map limits
       if (new_node_position.x > ocuppancy_grid_.rows - 1 ||
@@ -121,38 +140,47 @@ class AStarPlanner {
           (new_node_position.x < 0 || new_node_position.y < 0))
       {
         // std::cout << new_node_position <<  "OUT_OF_LIMITS" << std::endl;
-        continue;}
-        
+        continue;
+      }
+
       // Check if the node is occuped
-      if (ocuppancy_grid_.at<float>(new_node_position) == 1){
-        // std::cout << new_node_position <<  "OCUPPIED" << std::endl;
+      if (ocuppancy_grid_.at<uchar>(new_node_position.x, new_node_position.y) == 0)
+      {
+        // std::cout << new_node_position << "OCUPPIED" << std::endl;
         continue;
       }
 
       // Check if the node is already visited
-      if (nodes_visited_.find(convertPointToInt(new_node_position)) != nodes_visited_.end()){
+      if (nodes_visited_.find(convertPointToInt(new_node_position)) != nodes_visited_.end())
+      {
         // std::cout << new_node_position <<  "ALREADY VISITED" << std::endl;
         continue;
       }
       // Check if the node is in nodes_to_visit_ vector if not add to the list
       if (std::find_if(nodes_to_visit_.begin(), nodes_to_visit_.end(),
-                       [&new_node_position](std::pair<const int, NodePtr> ptr) {
+                       [&new_node_position](std::pair<const int, NodePtr> ptr)
+                       {
                          return ptr.second->get_coordinates() == new_node_position;
-                       }) != nodes_to_visit_.end()){
-      // std::cout << new_node_position <<  "ALREADY IN VISIT LIST" << std::endl;
-        continue;}
+                       }) != nodes_to_visit_.end())
+      {
+        // std::cout << new_node_position <<  "ALREADY IN VISIT LIST" << std::endl;
+        continue;
+      }
       // if all tests are passed
       nodes_to_visit_.emplace(convertPointToInt(new_node_position),
                               std::make_shared<Node>(new_node_position, node, goal_));
     }
   }
 
-  NodePtr findNextNodeToVisit() {
+  NodePtr findNextNodeToVisit()
+  {
     // look the less cost node
     NodePtr node_ptr = nullptr;
     double min_cost = std::numeric_limits<double>::infinity();
-    for (auto& node : nodes_to_visit_) {
-      if (node.second->get_f_cost() < min_cost) {
+    for (auto &node : nodes_to_visit_)
+    {
+      if (node.second->get_f_cost() < min_cost)
+      {
         node_ptr = node.second;
         min_cost = node.second->get_f_cost();
       }
@@ -160,9 +188,9 @@ class AStarPlanner {
     return node_ptr;
   }
 
-  public:
-
-  std::vector<cv::Point2i> solveGraph() {
+public:
+  std::vector<cv::Point2i> solveGraph()
+  {
     std::vector<cv::Point2i> path;
 
     nodes_to_visit_.clear();
@@ -171,16 +199,19 @@ class AStarPlanner {
     nodes_to_visit_.emplace(convertPointToInt(origin_point_),
                             std::make_shared<Node>(origin_point_, nullptr, goal_));
 
-    while (nodes_to_visit_.size() > 0) {
+    while (nodes_to_visit_.size() > 0)
+    {
       auto new_node = findNextNodeToVisit();
-      if (new_node == nullptr) throw std::runtime_error("node without ptr");
+      if (new_node == nullptr)
+        throw std::runtime_error("node without ptr");
 
       // if goal is finded
-      if (new_node->get_coordinates().x == goal_.x
-          && new_node->get_coordinates().y == goal_.y) {
+      if (new_node->get_coordinates().x == goal_.x && new_node->get_coordinates().y == goal_.y)
+      {
         std::cout << "PATH GENERATED" << std::endl;
         NodePtr parent_ptr = new_node;
-        do {
+        do
+        {
           path.emplace_back(parent_ptr->get_coordinates());
           // std::cout << parent_ptr->get_coordinates() << std::endl;
           parent_ptr = parent_ptr->get_parent();
@@ -192,10 +223,12 @@ class AStarPlanner {
       nodes_visited_.emplace(*new_node, new_node);
       nodes_to_visit_.erase(*new_node);
     }
-    if (path.size() > 0 ){
+    if (path.size() > 0)
+    {
       std::vector<cv::Point2i> inverted_path;
       inverted_path.reserve(path.size());
-      for (int i = path.size()-1 ; i >=0 ; i--) {
+      for (int i = path.size() - 1; i >= 0; i--)
+      {
         inverted_path.emplace_back(path[i]);
       }
       return inverted_path;
@@ -204,4 +237,4 @@ class AStarPlanner {
   }
 };
 
-#endif  // ASTAR_PLANNER_H
+#endif // ASTAR_PLANNER_H

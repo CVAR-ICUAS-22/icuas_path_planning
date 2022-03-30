@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0.2)
 
-set(PROJECT_NAME laserscan_to_map)
+set(PROJECT_NAME path_planner)
 project(${PROJECT_NAME})
 set(CMAKE_CXX_STANDARD 17)
 
@@ -9,14 +9,13 @@ set(PROJECT_DEPENDENCIES
   std_msgs
   sensor_msgs
   geometry_msgs
+  trajectory_msgs
   cv_bridge
   tf
   laser_geometry
   image_transport
-  # Eigen3
-  # mav_msgs
-  # tf2_ros
-  # geometry_msgs
+  message_generation
+  message_runtime
 )
 
 find_package(catkin REQUIRED COMPONENTS
@@ -25,8 +24,18 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen3)
 
+set(SOURCE_FILES
+  src/path_planner.cpp
+)
+
+add_service_files(FILES
+  setGoalPoint.srv
+)
+
+generate_messages(DEPENDENCIES geometry_msgs)
+
 catkin_package(
-  INCLUDE_DIRS include
+  INCLUDE_DIRS include include/${PROJECT_NAME}
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS ${PROJECT_DEPENDENCIES}
 )
@@ -38,10 +47,6 @@ include_directories(
   include/${PROJECT_NAME}
 )
 
-set(SOURCE_FILES
-  src/laserscan_to_map.cpp
-)
-
-add_executable(${PROJECT_NAME}_node src/laserscan_to_map_node.cpp ${SOURCE_FILES})
-add_dependencies(${PROJECT_NAME}_node ${catkin_EXPORTED_TARGETS})
+add_executable(${PROJECT_NAME}_node src/path_planner_node.cpp ${SOURCE_FILES})
+add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES})

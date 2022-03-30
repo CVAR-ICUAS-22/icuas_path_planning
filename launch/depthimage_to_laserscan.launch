@@ -5,6 +5,8 @@
 
 <launch>
 
+  <group ns="/red">
+  
   <!-- Depth Image to Laser Scan Node -->
   <node name="depthimage_to_laserscan" pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" args="">
 

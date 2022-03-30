@@ -1,14 +1,11 @@
-#include "laserscan_to_map.hpp"
+#include "path_planner.hpp"
 #include "ros/ros.h"
-// #include "ros/init.h"
-
-// #include <iostream>
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "laserscan_to_map_node");
+  ros::init(argc, argv, "path_planner_node");
 
-  LaserscanToMap node;
+  PathPlanner node;
 
   ros::Rate rate(100);
   while (ros::ok())
