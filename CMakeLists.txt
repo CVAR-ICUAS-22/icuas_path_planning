@@ -28,7 +28,8 @@ set(SOURCE_FILES
   src/path_planner.cpp
 )
 
-add_service_files(FILES
+add_service_files(DIRECTORY srv
+  FILES
   setGoalPoint.srv
 )
 
@@ -40,7 +41,7 @@ catkin_package(
   CATKIN_DEPENDS ${PROJECT_DEPENDENCIES}
 )
 
-include_directories(
+include_directories( 
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
 	include
@@ -50,3 +51,14 @@ include_directories(
 add_executable(${PROJECT_NAME}_node src/path_planner_node.cpp ${SOURCE_FILES})
 add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES})
+
+# install(DIRECTORY include/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.h")
+
+# install(DIRECTORY migration_rules
+#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
+# add_custom_target(${PROJECT_NAME}
+#             SOURCES ${DRONEMSGS_HEADER_FILES}
+#             )

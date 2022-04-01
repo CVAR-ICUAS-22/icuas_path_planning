@@ -7,7 +7,8 @@ PathPlanner::PathPlanner() : it_(nh_)
   waypoint_pub_ = nh_.advertise<trajectory_msgs::MultiDOFJointTrajectoryPoint>(WAYPOINT_TOPIC, 1);
   image_publisher_ = it_.advertise(IMAGE_PUB_TOPIC, 1);
   control_node_srv = nh_.advertiseService(CONTROLNODE_SRV, &PathPlanner::controlNodeSrv, this);
-  set_goal_srv = nh_.advertiseService(SETGOAL_SRV, &PathPlanner::setGoalSrv, this);
+  // set_goal_srv = nh_.advertiseService(SETGOAL_SRV, &PathPlanner::setGoalSrv, this);
+  set_goal_sub_ = nh_.subscribe(SETGOAL_TOPIC, 1, &PathPlanner::setGoalCallback, this);
 
   ref_frame_ = REF_FRAME;
   img_h_ = IMG_H;
@@ -25,7 +26,7 @@ void PathPlanner::start()
   ROS_INFO("Node started");
   if (goal_position_ == cv::Point2f(0, 0))
   {
-    goal_position_ = cv::Point2f(2, 0);
+    goal_position_ = cv::Point2f(5, 0);
     goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
     ROS_WARN("Goal position set to default: %f, %f", goal_position_.x, goal_position_.y);
   }
@@ -228,10 +229,10 @@ void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg)
   }
 }
 
-void PathPlanner::positionCallback(const geometry_msgs::PointStamped &_msg)
+void PathPlanner::positionCallback(const nav_msgs::Odometry &_msg)
 {
-  drone_position_.x = _msg.point.x;
-  drone_position_.y = _msg.point.y;
+  drone_position_.x = _msg.pose.pose.position.x;
+  drone_position_.y = _msg.pose.pose.position.y;
 
   drone_cell_ = coord2grid(drone_position_.x, drone_position_.y, img_h_, img_w_);
 }
@@ -264,7 +265,6 @@ bool PathPlanner::controlNodeSrv(std_srvs::SetBool::Request &_request, std_srvs:
 
 bool PathPlanner::setGoalSrv(path_planner::setGoalPoint::Request &_request, path_planner::setGoalPoint::Response &_response)
 {
-
   goal_position_.x = _request.goal.point.x;
   goal_position_.y = _request.goal.point.y;
 
@@ -276,9 +276,30 @@ bool PathPlanner::setGoalSrv(path_planner::setGoalPoint::Request &_request, path
   goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
 
   goal_set_ = true;
-  force_generation_ = true;
+  // force_generation_ = true;
 
   return true;
+}
+
+void PathPlanner::setGoalCallback(const geometry_msgs::PoseStamped &_msg)
+{
+  float distance = sqrt(pow(_msg.pose.position.x - drone_position_.x, 2) + pow(_msg.pose.position.y - drone_position_.y, 2));
+  if (distance < 5.0)
+  {
+    return;
+  }
+
+  goal_position_.x = _msg.pose.position.x;
+  goal_position_.y = _msg.pose.position.y;
+  // goal_position_.x = _msg.point.x;
+  // goal_position_.y = _msg.point.y;
+
+  ROS_INFO("Goal position: %f, %f", goal_position_.x, goal_position_.y);
+
+  goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
+
+  goal_set_ = true;
+  // force_generation_ = true;
 }
 
 // PUBLISH

@@ -5,7 +5,9 @@
 
 <launch>
 
-  <group ns="/red">
+  <arg name="namespace" />
+
+  <group ns="$(arg namespace)">
 
   <!-- Depth Image to Laser Scan Node -->
   <node name="depthimage_to_laserscan" pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" args="">
@@ -31,5 +33,4 @@
 
   </group>
 
-	
 </launch>

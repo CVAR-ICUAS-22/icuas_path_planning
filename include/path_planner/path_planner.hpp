@@ -5,7 +5,8 @@
 #include <std_srvs/SetBool.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud.h>
-#include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <nav_msgs/Odometry.h>
 #include <trajectory_msgs/MultiDOFJointTrajectoryPoint.h>
 #include <tf/transform_listener.h>
 #include <Eigen/Core>
@@ -20,11 +21,12 @@
 
 #define REF_FRAME "world"
 #define LASERSCAN_TOPIC "scan"
-#define DRONEPOSITION_TOPIC "position"
+#define DRONEPOSITION_TOPIC "odometry"
 #define WAYPOINT_TOPIC "position_hold/trajectory"
 #define IMAGE_PUB_TOPIC "occupancy_map"
 #define CONTROLNODE_SRV "path_planning/run"
 #define SETGOAL_SRV "path_planning/set_goal"
+#define SETGOAL_TOPIC "artag_pose"
 
 #define IMG_H 260
 #define IMG_W 160
@@ -42,7 +44,6 @@ public:
   PathPlanner();
   ~PathPlanner();
   void run();
-  // TODO: Add Start/Stop
   void start();
   void stop();
   void setGoal();
@@ -52,7 +53,8 @@ public:
   ros::Subscriber droneposition_sub_;
   ros::Publisher waypoint_pub_;
   ros::ServiceServer control_node_srv;
-  ros::ServiceServer set_goal_srv;
+  // ros::ServiceServer set_goal_srv;
+  ros::Subscriber set_goal_sub_;
 
   image_transport::ImageTransport it_;
   image_transport::Publisher image_publisher_;
@@ -63,9 +65,10 @@ public:
   AStarPlanner planner_algorithm_;
 
   void laserscanCallback(const sensor_msgs::LaserScan &_msg);
-  void positionCallback(const geometry_msgs::PointStamped &_msg);
+  void positionCallback(const nav_msgs::Odometry &_msg);
   bool controlNodeSrv(std_srvs::SetBool::Request &_request, std_srvs::SetBool::Response &_response);
   bool setGoalSrv(path_planner::setGoalPoint::Request &_request, path_planner::setGoalPoint::Response &_response);
+  void setGoalCallback(const geometry_msgs::PoseStamped &_msg);
 
   bool laser_update_ = false;
   bool new_occupancy_map_ = false;

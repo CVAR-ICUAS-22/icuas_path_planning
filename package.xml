@@ -20,4 +20,6 @@
   <depend>message_generation</depend>
   <depend>message_runtime</depend>
   
+  <export></export>
+  
 </package>
