@@ -5,7 +5,7 @@
 
 <launch>
 
-  <arg name="namespace" />
+  <arg name="namespace"/>
 
   <group ns="$(arg namespace)">
 

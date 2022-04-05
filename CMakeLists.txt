@@ -22,7 +22,8 @@ find_package(catkin REQUIRED COMPONENTS
   ${PROJECT_DEPENDENCIES}
 )
 
-find_package(Eigen3)
+find_package(Eigen3 REQUIRED)
+find_package(OpenCV REQUIRED)
 
 set(SOURCE_FILES
   src/path_planner.cpp
@@ -50,7 +51,7 @@ include_directories(
 
 add_executable(${PROJECT_NAME}_node src/path_planner_node.cpp ${SOURCE_FILES})
 add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 # install(DIRECTORY include/${PROJECT_NAME}/
 #   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}

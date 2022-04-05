@@ -24,12 +24,15 @@ PathPlanner::~PathPlanner() {}
 void PathPlanner::start()
 {
   ROS_INFO("Node started");
-  if (goal_position_ == cv::Point2f(0, 0))
-  {
-    goal_position_ = cv::Point2f(5, 0);
-    goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
-    ROS_WARN("Goal position set to default: %f, %f", goal_position_.x, goal_position_.y);
-  }
+  goal_position_ = cv::Point2f(6, 0);
+  goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
+  ROS_WARN("Goal position set to default: %f, %f", goal_position_.x, goal_position_.y);
+  // if (goal_position_ == cv::Point2f(0, 0))
+  // {
+  //   goal_position_ = cv::Point2f(5, 0);
+  //   goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
+  //   ROS_WARN("Goal position set to default: %f, %f", goal_position_.x, goal_position_.y);
+  // }
   force_generation_ = true;
 }
 
@@ -85,7 +88,8 @@ void PathPlanner::run()
 
   cv::Mat path_map = generatePathImg(occupancy_map_, drone_cell_, current_path_);
   sendMap(path_map);
-  showMap(laser_map_, "ICUAS laser map", true);
+
+  // showMap(laser_map_, "ICUAS laser map", true);
   // showMap(occupancy_map_, "ICUAS occupancy map", false);
   // showMap(path_map, "ICUAS path map", false);
 
@@ -174,7 +178,7 @@ void PathPlanner::checkCurrentPath()
   // Check if path points are free on the map
   for (auto &point : current_path_)
   {
-    if (occupancy_map_.at<uchar>(point.x, point.y) == 0) // TODO: Check
+    if (occupancy_map_.at<uchar>(point.x, point.y) == 0)
     {
       generate_path_ = true;
       break;
