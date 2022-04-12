@@ -9,7 +9,8 @@
 #include <nav_msgs/Odometry.h>
 #include <trajectory_msgs/MultiDOFJointTrajectoryPoint.h>
 #include <tf/transform_listener.h>
-#include <Eigen/Core>
+// #include <Eigen/Core>
+#include <Eigen/Dense>
 #include <laser_geometry/laser_geometry.h>
 #include <string>
 #include <image_transport/image_transport.h>
@@ -23,6 +24,7 @@
 #define LASERSCAN_TOPIC "scan"
 #define DRONEPOSITION_TOPIC "odometry"
 #define WAYPOINT_TOPIC "position_hold/trajectory"
+#define SPEEDCONTROL_TOPIC "motion_reference/speed"
 #define IMAGE_PUB_TOPIC "occupancy_map"
 #define CONTROLNODE_SRV "path_planning/run"
 #define SETGOAL_SRV "path_planning/set_goal"
@@ -33,10 +35,13 @@
 #define Z_MIN_TH 1.0
 
 #define OCC_MAX_DIST_PX 10 // in px
-#define OCC_GRID_SIZE 10   // in px
+#define OCC_GRID_SIZE 5    // 10   // in px
 
-#define DISTANCEMAP_TH 100 // 0-255
+#define DISTANCEMAP_TH 100 // 100 // 0-255
 #define DISTPOINT_TH 0.5   // in m
+#define CONTROL_SPEED 2    // in m/s
+
+#define SPEED_CONTROLLER 0
 
 class PathPlanner
 {
@@ -52,6 +57,7 @@ public:
   ros::Subscriber laserscan_sub_;
   ros::Subscriber droneposition_sub_;
   ros::Publisher waypoint_pub_;
+
   ros::ServiceServer control_node_srv;
   // ros::ServiceServer set_goal_srv;
   ros::Subscriber set_goal_sub_;
@@ -86,6 +92,7 @@ public:
   cv::Mat occupancy_map_;
   std::vector<float> laser_mesuraments;
   std::vector<cv::Point2i> current_path_;
+  std::vector<cv::Point2i> ref_waypoints_;
 
   cv::Point2f drone_position_;
   cv::Point2f goal_position_;
@@ -93,9 +100,15 @@ public:
   cv::Point2i drone_cell_;
   cv::Point2i goal_cell_;
 
+  // Begin of SPEED_CONTROLLER
+  ros::Publisher speed_control_pub_;
+  float control_speed_;
+  // End of SPEED_CONTROLLER
+
   void generateOccupancyMap();
   void checkCurrentPath();
   void generateNewPath();
+  void optimizePath();
 
   void sendMap(cv::Mat _map);
   void showMap(const cv::Mat &_map, const std::string &_map_name, const bool _add_drone);
@@ -105,8 +118,10 @@ public:
 
 cv::Point2i coord2img(const float _x, const float _y, const int _img_h, const int _img_w);
 cv::Point2i coord2grid(const float _x, const float _y, const int _img_h, const int _img_w);
-trajectory_msgs::MultiDOFJointTrajectoryPoint createTrajectoryFromPoint(const cv::Point2f &_point, const float _height, const cv::Point2f &_current_position);
+trajectory_msgs::MultiDOFJointTrajectoryPoint createTrajectoryFromPointMsg(const cv::Point2f &_point, const float _height, const cv::Point2f &_current_position);
+geometry_msgs::TwistStamped createSpeedReferenceMsg(cv::Point2d _current_position, cv::Point2d _target_position, float _speed);
+
 cv::Point2f grid2coord(const cv::Point2i &_point, const int _img_h, const int _img_w);
-cv::Mat generatePathImg(const cv::Mat &_map, const cv::Point &_drone_px, const std::vector<cv::Point> &_path);
+cv::Mat generatePathImg(const cv::Mat &_map, const cv::Point2i &_drone_px, const std::vector<cv::Point2i> &_path, const std::vector<cv::Point2i> &_waypoints);
 
 #endif // PATH_PLANNER_HPP_

@@ -5,7 +5,7 @@
 
 <launch>
 
-  <group ns="/red">
+  <group ns="red">
   
   <!-- Depth Image to Laser Scan Node -->
   <node name="depthimage_to_laserscan" pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" args="">
@@ -24,5 +24,7 @@
     <param name="output_frame_id" type="str"    value="red/camera_box"/> <!--default: camera_depth_frame. Frame id of the laser scan. -->
 	
   </node>
+
+  </group>
 	
 </launch>
