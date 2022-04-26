@@ -30,18 +30,22 @@
 #define SETGOAL_SRV "path_planning/set_goal"
 #define SETGOAL_TOPIC "artag_pose"
 
-#define IMG_H 260
-#define IMG_W 160
-#define Z_MIN_TH 1.0
+#define MAP_H 26.0          // in m
+#define MAP_W 16.0          // in m
+#define IMG_RESOLUTION 10.0 // in px/m
 
-#define OCC_MAX_DIST_PX 10 // in px
-#define OCC_GRID_SIZE 5    // 10   // in px
+#define MAX_DISTANCE_TH 10 // in px
+#define OCC_GRID_SIZE 3.0  // 5.0  // in px = 0.1m
 
-#define DISTANCEMAP_TH 100 // 100 // 0-255
-#define DISTPOINT_TH 0.5   // in m
-#define CONTROL_SPEED 2    // in m/s
+#define LASER2BIN_TH 100 // 100 // [0-255]
+#define DIST2BIN_TH 0.7  // [0.0-1.0]
 
-#define SPEED_CONTROLLER 0
+#define NEXT_POINT_REACHED_DIST 0.5 // in m
+#define Z_MIN_TH 1.0                // in m
+
+#define SPEED_CONTROLLER 0 // Activate Speed Controller [0/1]
+#define CONTROL_SPEED 0    // in m/s
+#define FLY_HEIGHT 2.0     // in m
 
 class PathPlanner
 {
@@ -96,6 +100,8 @@ public:
 
   cv::Point2f drone_position_;
   cv::Point2f goal_position_;
+  float drone_yaw_;
+  float fly_height_;
 
   cv::Point2i drone_cell_;
   cv::Point2i goal_cell_;
@@ -118,10 +124,11 @@ public:
 
 cv::Point2i coord2img(const float _x, const float _y, const int _img_h, const int _img_w);
 cv::Point2i coord2grid(const float _x, const float _y, const int _img_h, const int _img_w);
-trajectory_msgs::MultiDOFJointTrajectoryPoint createTrajectoryFromPointMsg(const cv::Point2f &_point, const float _height, const cv::Point2f &_current_position);
+trajectory_msgs::MultiDOFJointTrajectoryPoint createTrajectoryFromPointMsg(const cv::Point2f &_point, const float _height, const float _yaw);
 geometry_msgs::TwistStamped createSpeedReferenceMsg(cv::Point2d _current_position, cv::Point2d _target_position, float _speed);
 
 cv::Point2f grid2coord(const cv::Point2i &_point, const int _img_h, const int _img_w);
 cv::Mat generatePathImg(const cv::Mat &_map, const cv::Point2i &_drone_px, const std::vector<cv::Point2i> &_path, const std::vector<cv::Point2i> &_waypoints);
+void showCombinedMap(std::vector<cv::Mat> maps, std::string window_name);
 
 #endif // PATH_PLANNER_HPP_
