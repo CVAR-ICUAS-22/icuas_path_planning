@@ -177,14 +177,19 @@ void PathPlanner::generateOccupancyMap()
   // Convert _img into a binary image  thresholding it and compute the distance map (in meters)
   cv::Mat binary_map, distance_map, dist_normalized_map;
   float max_dist = MAX_DISTANCE_TH;
+  float min_value = MIN_DISTANCE_TH / MAX_DISTANCE_TH;
+  float range_value = 1.0 - min_value;
 
   // Generate Distance Map
   cv::threshold(laser_map_, binary_map, LASER2BIN_TH, 255, cv::THRESH_BINARY_INV);
   cv::distanceTransform(binary_map, distance_map, cv::DIST_L2, 3);
-  dist_normalized_map = distance_map / max_dist;               // normalize distance map respect to the max dist
-  dist_normalized_map.setTo(1.0f, dist_normalized_map > 1.0f); // clip image to 1.0
+
+  dist_normalized_map = distance_map / max_dist;                                   // normalize distance map respect to the max dist
+  dist_normalized_map.setTo(1.0f, dist_normalized_map > 1.0f);                     // clip image to 1.0
+  dist_normalized_map.setTo(min_value, dist_normalized_map < min_value);           // clip image to 1.0
+  cv::Mat dist_renormalized_map = (dist_normalized_map - min_value) / range_value; // renormalize distance map respect to the max dist
   // dist_normalized_map.setTo(1.0f, dist_normalized_map > 0.5f); // clip image to 1.0
-  cv::Mat dist_normalized_map_8u = dist_normalized_map * 255; // convert to 8-bit image
+  cv::Mat dist_normalized_map_8u = dist_renormalized_map * 255; // convert to 8-bit image
   dist_normalized_map_8u.convertTo(dist_normalized_map_8u, CV_8UC1);
   bool eq = cv::countNonZero(occupancy_map_ != dist_normalized_map_8u) == 0;
 
@@ -325,7 +330,7 @@ void PathPlanner::optimizePath()
   ROS_DEBUG("Optimizing path");
   ref_waypoints_.clear();
 
-  bool optimize = false;
+  bool optimize = true;
   if (!optimize)
   {
     ref_waypoints_ = current_path_;

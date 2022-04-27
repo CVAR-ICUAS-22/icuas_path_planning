@@ -34,13 +34,14 @@
 #define MAP_W 16.0          // in m
 #define IMG_RESOLUTION 10.0 // in px/m
 
-#define MAX_DISTANCE_TH 10 // in px
-#define OCC_GRID_SIZE 1.0  // 5.0  // in px = 0.1m
+#define MAX_DISTANCE_TH 12.0f // in px
+#define MIN_DISTANCE_TH 6.0f  // in px
+#define OCC_GRID_SIZE 1.0     // 5.0  // in px = 0.1m
 
 #define LASER2BIN_TH 100 // 100 // [0-255]
 // #define DIST2BIN_TH 0.7  // [0.0-1.0]
 
-#define NEXT_POINT_REACHED_DIST 0.5 // in m
+#define NEXT_POINT_REACHED_DIST 0.2 // in m
 #define Z_MIN_TH 1.0                // in m
 
 #define SPEED_CONTROLLER 0 // Activate Speed Controller [0/1]

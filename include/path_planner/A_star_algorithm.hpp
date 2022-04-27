@@ -115,18 +115,18 @@ public:
   AStarPlanner()
   {
     valid_movements_.clear();
-    valid_movements_.reserve(4);
-    // valid_movements_.reserve(8);
+    // valid_movements_.reserve(4);
+    valid_movements_.reserve(8);
 
     valid_movements_.emplace_back(-1, 0);
     valid_movements_.emplace_back(0, -1);
     valid_movements_.emplace_back(0, 1);
     valid_movements_.emplace_back(1, 0);
 
-    // valid_movements_.emplace_back(-1, -1);
-    // valid_movements_.emplace_back(-1, 1);
-    // valid_movements_.emplace_back(1, -1);
-    // valid_movements_.emplace_back(1, 1);
+    valid_movements_.emplace_back(-1, -1);
+    valid_movements_.emplace_back(-1, 1);
+    valid_movements_.emplace_back(1, -1);
+    valid_movements_.emplace_back(1, 1);
   }
 
   void setOcuppancyGrid(const cv::Mat &mat) { ocuppancy_grid_ = mat.clone(); }
@@ -150,7 +150,7 @@ private:
 
       // Check if the node is occuped
       // if (ocuppancy_grid_.at<uchar>(new_node_position.x, new_node_position.y) == 0)
-      if (ocuppancy_grid_.at<uchar>(new_node_position.x, new_node_position.y) < 220)
+      if (ocuppancy_grid_.at<uchar>(new_node_position.x, new_node_position.y) < 50)
       {
         // std::cout << new_node_position << "OCUPPIED" << std::endl;
         continue;
