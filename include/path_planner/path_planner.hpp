@@ -35,10 +35,10 @@
 #define IMG_RESOLUTION 10.0 // in px/m
 
 #define MAX_DISTANCE_TH 10 // in px
-#define OCC_GRID_SIZE 3.0  // 5.0  // in px = 0.1m
+#define OCC_GRID_SIZE 1.0  // 5.0  // in px = 0.1m
 
 #define LASER2BIN_TH 100 // 100 // [0-255]
-#define DIST2BIN_TH 0.7  // [0.0-1.0]
+// #define DIST2BIN_TH 0.7  // [0.0-1.0]
 
 #define NEXT_POINT_REACHED_DIST 0.5 // in m
 #define Z_MIN_TH 1.0                // in m
@@ -94,6 +94,7 @@ public:
 
   cv::Mat laser_map_;
   cv::Mat occupancy_map_;
+  cv::Mat distance_map_;
   std::vector<float> laser_mesuraments;
   std::vector<cv::Point2i> current_path_;
   std::vector<cv::Point2i> ref_waypoints_;

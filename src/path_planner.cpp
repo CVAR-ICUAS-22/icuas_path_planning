@@ -136,7 +136,7 @@ void PathPlanner::run()
       float distance_to_future_point = sqrt(pow(future_point.x - drone_position_.x, 2) + pow(future_point.y - drone_position_.y, 2));
       // ROS_INFO("Future yaw: %f", future_yaw);
 
-      if (abs(future_yaw - drone_yaw_) < M_PI_4 || distance_to_future_point < NEXT_POINT_REACHED_DIST)
+      if (abs(future_yaw - drone_yaw_) < (M_PI_4 / 2) || distance_to_future_point < NEXT_POINT_REACHED_DIST)
       {
         ref_waypoints_.erase(ref_waypoints_.begin());
         send_waypoint = true;
@@ -183,6 +183,16 @@ void PathPlanner::generateOccupancyMap()
   cv::distanceTransform(binary_map, distance_map, cv::DIST_L2, 3);
   dist_normalized_map = distance_map / max_dist;               // normalize distance map respect to the max dist
   dist_normalized_map.setTo(1.0f, dist_normalized_map > 1.0f); // clip image to 1.0
+  // dist_normalized_map.setTo(1.0f, dist_normalized_map > 0.5f); // clip image to 1.0
+  cv::Mat dist_normalized_map_8u = dist_normalized_map * 255; // convert to 8-bit image
+  dist_normalized_map_8u.convertTo(dist_normalized_map_8u, CV_8UC1);
+  bool eq = cv::countNonZero(occupancy_map_ != dist_normalized_map_8u) == 0;
+
+  if (!eq)
+  {
+    occupancy_map_ = dist_normalized_map_8u;
+    new_occupancy_map_ = true;
+  }
 
   // Generate Occupancy Map (option 1)
   // cv::Mat binary_occupancy_map;
@@ -198,34 +208,34 @@ void PathPlanner::generateOccupancyMap()
   // occupancy_map_.setTo(0, binary_occupancy_map <= 0.9);
 
   // TODO: Generate Occupancy Map (option 3): MAKE CONVOLUTION TO SOLVE THIS AND EVERYBODY WILL BE HAPPY
-  cv::Mat binary_distance_map, binary_occupancy_map;
-  cv::threshold(dist_normalized_map, binary_distance_map, DIST2BIN_TH, 1, cv::THRESH_BINARY);
+  // cv::Mat binary_distance_map, binary_occupancy_map;
+  // cv::threshold(dist_normalized_map, binary_distance_map, DIST2BIN_TH, 1, cv::THRESH_BINARY);
 
-  // cv::imshow("dist_normalized_map", dist_normalized_map);
-  // cv::imshow("binary_distance_map", binary_distance_map);
+  // // cv::imshow("dist_normalized_map", dist_normalized_map);
+  // // cv::imshow("binary_distance_map", binary_distance_map);
 
-  for (int i = 0; i < grid_size_.height; i++)
-  {
-    for (int j = 0; j < grid_size_.width; j++)
-    {
-      int current_value = occupancy_map_.at<uchar>(i, j);
-      if (current_value > 1) // Just for no occuped cells
-      {
-        int h_step = int(img_h_ / grid_size_.height);
-        int w_step = int(img_w_ / grid_size_.width);
-        cv::Mat submatrix = binary_distance_map(cv::Range(h_step * i, h_step * (i + 1)), cv::Range(w_step * j, w_step * (j + 1)));
+  // for (int i = 0; i < grid_size_.height; i++)
+  // {
+  //   for (int j = 0; j < grid_size_.width; j++)
+  //   {
+  //     int current_value = occupancy_map_.at<uchar>(i, j);
+  //     if (current_value > 1) // Just for no occuped cells
+  //     {
+  //       int h_step = int(img_h_ / grid_size_.height);
+  //       int w_step = int(img_w_ / grid_size_.width);
+  //       cv::Mat submatrix = binary_distance_map(cv::Range(h_step * i, h_step * (i + 1)), cv::Range(w_step * j, w_step * (j + 1)));
 
-        double min_value, max_value;
-        cv::minMaxLoc(submatrix, &min_value, &max_value);
+  //       double min_value, max_value;
+  //       cv::minMaxLoc(submatrix, &min_value, &max_value);
 
-        if (min_value < 1)
-        {
-          occupancy_map_.at<uchar>(i, j) = 0;
-          new_occupancy_map_ = true;
-        }
-      }
-    }
-  }
+  //       if (min_value < 1)
+  //       {
+  //         occupancy_map_.at<uchar>(i, j) = 0;
+  //         new_occupancy_map_ = true;
+  //       }
+  //     }
+  //   }
+  // }
 
   // // Check occupancy map changes
   // cv::Mat diff;
@@ -239,22 +249,18 @@ void PathPlanner::generateOccupancyMap()
   // showMap(distance_map, "distance_map", false);
   // showMap(dist_normalized_map, "dist_normalized_map", false);
   // showMap(binary_distance_map, "binary_distance_map", false);
-  showMap(occupancy_map_, "occupancy_map_", false);
-  std::vector<cv::Mat> maps{laser_map_, binary_map, distance_map, dist_normalized_map, binary_distance_map, occupancy_map_};
-  showCombinedMap(maps, "combined_map");
 
-  cv::Point2i img_drone_position;
-  img_drone_position = coord2img(drone_position_.x, drone_position_.y, img_h_, img_w_);
+  // showMap(occupancy_map_, "occupancy_map_", false);
+  // std::vector<cv::Mat> maps{laser_map_, binary_map, distance_map, dist_normalized_map, binary_distance_map, occupancy_map_};
+  // showCombinedMap(maps, "combined_map");
+
+  // cv::Point2i img_drone_position;
+  // img_drone_position = coord2img(drone_position_.x, drone_position_.y, img_h_, img_w_);
 }
 
 void showCombinedMap(std::vector<cv::Mat> maps, std::string window_name)
 {
   cv::Mat combined_map_top, combined_map_bot, combined_map;
-  // for (auto m : maps)
-  // {
-  //   ROS_INFO("Map size: %d, %d, %d", m.size().height, m.size().width, m.channels());
-  //   ROS_INFO("Map type: %d", m.type());
-  // }
 
   for (int i = 0; i < maps.size(); i++)
   {
@@ -277,14 +283,8 @@ void showCombinedMap(std::vector<cv::Mat> maps, std::string window_name)
     }
   }
 
-  // std::vector<cv::Mat> m_top(maps.begin(), maps.begin() + 2);
-  // std::vector<cv::Mat> m_bot(maps.begin() + 3, maps.end());
-  // cv::hconcat(m_top, combined_map_top);
   cv::imshow("map_top", combined_map_top);
-  // cv::hconcat(m_bot, combined_map_bot);
   cv::imshow("map_bot", combined_map_bot);
-  // cv::vconcat(combined_map_top, combined_map_bot, combined_map);
-  // cv::imshow(window_name, combined_map);
   cv::waitKey(1);
 }
 
@@ -325,7 +325,7 @@ void PathPlanner::optimizePath()
   ROS_DEBUG("Optimizing path");
   ref_waypoints_.clear();
 
-  bool optimize = true;
+  bool optimize = false;
   if (!optimize)
   {
     ref_waypoints_ = current_path_;

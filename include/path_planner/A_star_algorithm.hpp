@@ -61,10 +61,10 @@ class Node
   NodePtr parent_ptr_;
 
 public:
-  Node(const cv::Point2i &coords, const NodePtr &parent_ptr, const cv::Point2i goal)
+  Node(const cv::Point2i &coords, const NodePtr &parent_ptr, const cv::Point2i goal, const float map_weight = 0.0)
       : coordinates_(coords), parent_ptr_(parent_ptr)
   {
-    computeCosts(goal);
+    computeCosts(goal, map_weight);
     // std::cout << "new node created: "<< coords << std::endl;
   };
   cv::Point2i get_coordinates() const { return coordinates_; }
@@ -75,7 +75,7 @@ public:
 
   operator int() const { return convertPointToInt(coordinates_); }
 
-  double computeCosts(const cv::Point2i &goal)
+  double computeCosts(const cv::Point2i &goal, const float map_weight)
   {
     const cv::Point2i &point = get_coordinates();
     h_cost_ = std::sqrt(std::pow(point.x - goal.x, 2) + std::pow(point.y - goal.y, 2));
@@ -90,6 +90,8 @@ public:
       {
         g_cost_ += 1;
       }
+      // Add map weight
+      g_cost_ += map_weight;
     }
     f_cost_ = g_cost_ + h_cost_;
     return f_cost_;
@@ -147,7 +149,8 @@ private:
       }
 
       // Check if the node is occuped
-      if (ocuppancy_grid_.at<uchar>(new_node_position.x, new_node_position.y) == 0)
+      // if (ocuppancy_grid_.at<uchar>(new_node_position.x, new_node_position.y) == 0)
+      if (ocuppancy_grid_.at<uchar>(new_node_position.x, new_node_position.y) < 220)
       {
         // std::cout << new_node_position << "OCUPPIED" << std::endl;
         continue;
@@ -170,8 +173,10 @@ private:
         continue;
       }
       // if all tests are passed
+      float map_weight = (1.0 - (ocuppancy_grid_.at<uchar>(new_node_position.x, new_node_position.y) / 255.0)) * 10.0;
+      // std::cout << "map_weight: " << map_weight << std::endl;
       nodes_to_visit_.emplace(convertPointToInt(new_node_position),
-                              std::make_shared<Node>(new_node_position, node, goal_));
+                              std::make_shared<Node>(new_node_position, node, goal_, map_weight));
     }
   }
 
