@@ -127,14 +127,12 @@ void PathPlanner::run()
   {
     cv::Point2f next_point = grid2coord(ref_waypoints_[0], img_h_, img_w_);
     double distance_to_next_point = sqrt(pow(next_point.x - drone_position_.x, 2) + pow(next_point.y - drone_position_.y, 2));
-    // ROS_INFO("Current yaw: %f", drone_yaw_);
 
     if (distance_to_next_point < NEXT_POINT_REACHED_DIST)
     {
       cv::Point2f future_point = grid2coord(ref_waypoints_[1], img_h_, img_w_);
       float future_yaw = atan2(future_point.y - drone_position_.y, future_point.x - drone_position_.x);
       float distance_to_future_point = sqrt(pow(future_point.x - drone_position_.x, 2) + pow(future_point.y - drone_position_.y, 2));
-      // ROS_INFO("Future yaw: %f", future_yaw);
 
       if (abs(future_yaw - drone_yaw_) < M_PI_4 || distance_to_future_point < NEXT_POINT_REACHED_DIST)
       {
@@ -239,12 +237,13 @@ void PathPlanner::generateOccupancyMap()
   // showMap(distance_map, "distance_map", false);
   // showMap(dist_normalized_map, "dist_normalized_map", false);
   // showMap(binary_distance_map, "binary_distance_map", false);
-  showMap(occupancy_map_, "occupancy_map_", false);
-  std::vector<cv::Mat> maps{laser_map_, binary_map, distance_map, dist_normalized_map, binary_distance_map, occupancy_map_};
-  showCombinedMap(maps, "combined_map");
 
-  cv::Point2i img_drone_position;
-  img_drone_position = coord2img(drone_position_.x, drone_position_.y, img_h_, img_w_);
+  // showMap(occupancy_map_, "occupancy_map_", false);
+  // std::vector<cv::Mat> maps{laser_map_, binary_map, distance_map, dist_normalized_map, binary_distance_map, occupancy_map_};
+  // showCombinedMap(maps, "combined_map");
+
+  // cv::Point2i img_drone_position;
+  // img_drone_position = coord2img(drone_position_.x, drone_position_.y, img_h_, img_w_);
 }
 
 void showCombinedMap(std::vector<cv::Mat> maps, std::string window_name)
