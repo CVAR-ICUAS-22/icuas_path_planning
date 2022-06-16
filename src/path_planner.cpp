@@ -1,7 +1,5 @@
 #include "path_planner.hpp"
 
-#include <cmath>
-#include <deque>
 
 PathPlanner::PathPlanner() : it_(nh_) {
   laserscan_sub_ = nh_.subscribe(LASERSCAN_TOPIC, 1, &PathPlanner::laserscanCallback, this);
@@ -88,35 +86,6 @@ void PathPlanner::run() {
     return;
   }
 
-  // // TODO:Check send_waypoint
-  // // if (current_path_.size() > 0 & send_waypoint)
-
-  // WORKS
-  // if (ref_waypoints_.size() > 0)
-  // {
-  //   cv::Point2f next_point = grid2coord(ref_waypoints_[0], img_h_, img_w_);
-
-  //   if (SPEED_CONTROLLER)
-  //   {
-  //     speed_control_pub_.publish(createSpeedReferenceMsg(drone_position_, next_point,
-  //     control_speed_));
-  //   }
-  //   else
-  //   {
-  //     waypoint_pub_.publish(createTrajectoryFromPointMsg(next_point, fly_height_,
-  //     drone_position_)); send_waypoint = false;
-  //   }
-
-  //   double distance = sqrt(pow(next_point.x - drone_position_.x, 2) + pow(next_point.y -
-  //   drone_position_.y, 2));
-
-  //   if (distance < NEXT_POINT_REACHED_DIST)
-  //   {
-  //     ref_waypoints_.erase(ref_waypoints_.begin());
-  //     send_waypoint = true;
-  //   }
-  // }
-
   // TESTING YAW
   // if (current_path_.size() > 0 & send_waypoint)
   if (ref_waypoints_.size() > 0) {
@@ -155,9 +124,9 @@ void PathPlanner::run() {
     // }
   }
 
-  // showMap(laser_map_, "ICUAS laser map", true);
-  // showMap(occupancy_map_, "ICUAS occupancy map", false);
-  // showMap(path_map, "ICUAS path map", false);
+  showMap(laser_map_, "ICUAS laser map", true);
+  showMap(occupancy_map_, "ICUAS occupancy map", false);
+  showMap(path_map, "ICUAS path map", false);
 
   if (force_generation_) force_generation_ = false;
 }

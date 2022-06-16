@@ -9,7 +9,6 @@
 #include <nav_msgs/Odometry.h>
 #include <trajectory_msgs/MultiDOFJointTrajectoryPoint.h>
 #include <tf/transform_listener.h>
-// #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <laser_geometry/laser_geometry.h>
 #include <string>
@@ -17,6 +16,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
 #include <cmath>
+#include <deque>
 #include "A_star_algorithm.hpp"
 #include "path_planner/setGoalPoint.h"
 
@@ -30,8 +30,13 @@
 #define SETGOAL_SRV "path_planning/set_goal"
 #define SETGOAL_TOPIC "artag_pose"
 
+// SIMULATION
+// #define MAP_H 26.0          // in m
+// #define MAP_W 16.0          // in m
+// REAL
 #define MAP_H 26.0          // in m
 #define MAP_W 16.0          // in m
+
 #define IMG_RESOLUTION 10.0 // in px/m
 
 #define MAX_DISTANCE_TH 10 // in px
