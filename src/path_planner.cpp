@@ -17,6 +17,7 @@ PathPlanner::PathPlanner() : it_(nh_) {
   float map_w;
   float max_distance;
   float occ_map_grid_size;
+  float goal_position_x, goal_position_y;
 
   nh_.getParam("path_planner/map_h", map_h);
   nh_.getParam("path_planner/map_w", map_w);
@@ -24,7 +25,9 @@ PathPlanner::PathPlanner() : it_(nh_) {
   nh_.getParam("path_planner/occ_grid_size", occ_map_grid_size);
   nh_.getParam("path_planner/z_min_th", z_min_th_);
   nh_.getParam("path_planner/ref_frame", ref_frame_);
-
+  
+  nh_.getParam("path_planner/goal_position_x", goal_position_x);
+  nh_.getParam("path_planner/goal_position_y", goal_position_y);
   nh_.getParam("path_planner/fly_height", fly_height_);
   nh_.getParam("path_planner/security_distance", max_distance);
   nh_.getParam("path_planner/next_point_reached_dist", next_point_reached_dist_);
@@ -38,7 +41,6 @@ PathPlanner::PathPlanner() : it_(nh_) {
   ROS_INFO("occ_grid_size: %.2f", occ_map_grid_size);
   ROS_INFO("z_min_th: %.2f", z_min_th_);
   ROS_INFO("ref_frame: %s", ref_frame_.c_str());
-
   ROS_INFO("fly_height: %.2f", fly_height_);
   ROS_INFO("security distance: %.2f", max_distance);
   ROS_INFO("next_point_reached_dist: %.2f", next_point_reached_dist_);
@@ -63,7 +65,8 @@ PathPlanner::PathPlanner() : it_(nh_) {
   }
 
   // Node start
-  goal_position_ = cv::Point2f(6, 0);
+  // goal_position_ = cv::Point2f(6, 0);
+  goal_position_ = cv::Point2f(goal_position_x, goal_position_y);
   goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
   ROS_WARN("Goal position set to default: %f, %f", goal_position_.x, goal_position_.y);
 }
