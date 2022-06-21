@@ -785,13 +785,13 @@ cv::Point2f PathPlanner::grid2coord(const cv::Point2i &_point, const int _img_h,
   // ROS_INFO("Second x: %f, y: %f", coord_point.x, coord_point.y);
 
   // saturate the coordinates
-  coord_point.x = std::max((double)coord_point.x,(double) _img_h / 2.0);
-  coord_point.x = std::min((double)coord_point.x,(double) -_img_h / 2.0);
-  coord_point.y = std::max((double)coord_point.y,(double) _img_w / 2.0);
-  coord_point.y = std::min((double)coord_point.y,(double) -_img_w / 2.0);
+  // coord_point.x = std::max((double)coord_point.x,(double) _img_h / 2.0);
+  // coord_point.x = std::min((double)coord_point.x,(double) -_img_h / 2.0);
+  // coord_point.y = std::max((double)coord_point.y,(double) _img_w / 2.0);
+  // coord_point.y = std::min((double)coord_point.y,(double) -_img_w / 2.0);
 
-  coord_point.x = (int) coord_point.x;
-  coord_point.y = (int) coord_point.y;
+  // coord_point.x = (int) coord_point.x;
+  // coord_point.y = (int) coord_point.y;
 
 
   return coord_point;
