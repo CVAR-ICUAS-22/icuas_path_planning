@@ -76,6 +76,7 @@ class PathPlanner {
   bool force_generation_ = false;
   bool check_future_point_ = false;
   bool ending_maze_ = false;
+  bool no_solution_ = false;
 
   int img_h_;
   int img_w_;
@@ -113,6 +114,7 @@ class PathPlanner {
   void checkCurrentPath();
   void generateNewPath();
   void optimizePath();
+  void sendWaypoint(const cv::Point2f _next_point, const float _sending_yaw);
 
   void sendMap(cv::Mat _map);
   void showMap(const cv::Mat &_map, const std::string &_map_name, const bool _add_drone);

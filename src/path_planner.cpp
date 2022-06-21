@@ -108,6 +108,14 @@ void PathPlanner::run() {
     checkCurrentPath();
   }
 
+  if (no_solution_)
+  {
+    static cv::Point2f hover_position = drone_position_;
+    ROS_WARN("Solution not found");
+    sendWaypoint(hover_position, 0.0);
+    return;
+  }
+
   if (generate_path_ || force_generation_) {
     generate_path_ = false;
     generateNewPath();
@@ -174,19 +182,21 @@ void PathPlanner::run() {
     }
 
     if (send_waypoint) {
+      sendWaypoint(next_point, sending_yaw);
+    }
       // float next_yaw = atan2(next_point.y - drone_position_.y, next_point.x - drone_position_.x);
-      if (!speed_controller_) {
-        waypoint_pub_.publish(createTrajectoryFromPointMsg(next_point, fly_height_, sending_yaw));
-      }
-      if (speed_controller_) {
-        if (ending_maze_) {
-          ROS_INFO("Sending pose %f, %f", next_point.x, next_point.y);
-          pose_pub_.publish(createPoseStampedMsg(next_point, fly_height_, sending_yaw));
-        } else {
-          speed_control_pub_.publish(
-              createSpeedReferenceMsg(drone_position_, next_point, max_control_speed_));
-        }
-      }
+      // if (!speed_controller_) {
+      //   waypoint_pub_.publish(createTrajectoryFromPointMsg(next_point, fly_height_, sending_yaw));
+      // }
+      // if (speed_controller_) {
+      //   if (ending_maze_) {
+      //     ROS_INFO("Sending pose %f, %f", next_point.x, next_point.y);
+      //     pose_pub_.publish(createPoseStampedMsg(next_point, fly_height_, sending_yaw));
+      //   } else {
+      //     speed_control_pub_.publish(
+      //         createSpeedReferenceMsg(drone_position_, next_point, max_control_speed_));
+      //   }
+      // }
 
       // if (SPEED_CONTROLLER)
       //   speed_control_pub_.publish(createSpeedReferenceMsg(drone_position_, next_point,
@@ -197,7 +207,7 @@ void PathPlanner::run() {
       //   ref_waypoints_.erase(ref_waypoints_.begin());
       //   send_waypoint = true;
       // }
-    }
+    // }
   }
 
   // showMap(laser_map_, "ICUAS laser map", true);
@@ -205,6 +215,23 @@ void PathPlanner::run() {
   // showMap(path_map, "ICUAS path map", false);
 
   if (force_generation_) force_generation_ = false;
+}
+
+void PathPlanner::sendWaypoint(const cv::Point2f _next_point, const float _sending_yaw)
+{
+      if (!speed_controller_) {
+        waypoint_pub_.publish(createTrajectoryFromPointMsg(_next_point, fly_height_, _sending_yaw));
+      }
+      if (speed_controller_) {
+        if (ending_maze_) {
+          ROS_INFO("Sending pose %f, %f", _next_point.x, _next_point.y);
+          pose_pub_.publish(createPoseStampedMsg(_next_point, fly_height_, _sending_yaw));
+        } else {
+          speed_control_pub_.publish(
+              createSpeedReferenceMsg(drone_position_, _next_point, max_control_speed_));
+        }
+      }
+
 }
 
 void PathPlanner::generateOccupancyMap() {
@@ -347,6 +374,12 @@ void PathPlanner::optimizePath() {
   ROS_DEBUG("Optimizing path");
   ref_waypoints_.clear();
 
+  if (current_path_.size() == 0) {
+    ROS_ERROR("Path is empty");
+    no_solution_ = true;
+    return;
+  }
+
   bool optimize = true;
   if (!optimize) {
     ref_waypoints_ = current_path_;
@@ -354,6 +387,7 @@ void PathPlanner::optimizePath() {
   }
 
   ref_waypoints_.emplace_back(current_path_[0]);
+
   cv::Point2i path_point;
 
   for (int i = 1; i < current_path_.size(); i++) {
