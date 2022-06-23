@@ -2,7 +2,8 @@
 
 #include "geometry_msgs/PoseStamped.h"
 
-PathPlanner::PathPlanner() : it_(nh_) {
+PathPlanner::PathPlanner() : it_(nh_)
+{
   laserscan_sub_ = nh_.subscribe(LASERSCAN_TOPIC, 1, &PathPlanner::laserscanCallback, this);
   droneposition_sub_ = nh_.subscribe(DRONEPOSITION_TOPIC, 1, &PathPlanner::positionCallback, this);
 
@@ -25,7 +26,7 @@ PathPlanner::PathPlanner() : it_(nh_) {
   nh_.getParam("path_planner/occ_grid_size", occ_map_grid_size);
   nh_.getParam("path_planner/z_min_th", z_min_th_);
   nh_.getParam("path_planner/ref_frame", ref_frame_);
-  
+
   nh_.getParam("path_planner/goal_position_x", goal_position_x);
   nh_.getParam("path_planner/goal_position_y", goal_position_y);
   nh_.getParam("path_planner/fly_height", fly_height_);
@@ -46,7 +47,8 @@ PathPlanner::PathPlanner() : it_(nh_) {
   ROS_INFO("next_point_reached_dist: %.2f", next_point_reached_dist_);
   std::string controller_str = speed_controller_ ? "SPEED" : "POSITION";
   ROS_INFO("controller: %s", controller_str.c_str());
-  if (speed_controller_) {
+  if (speed_controller_)
+  {
     ROS_INFO("control_speed: %.2f", max_control_speed_);
   }
 
@@ -60,7 +62,8 @@ PathPlanner::PathPlanner() : it_(nh_) {
   occupancy_map_ = cv::Mat::ones(grid_size_.height, grid_size_.width, CV_8UC1) * 255;
   max_distance_th_ = max_distance * img_resolution_;
 
-  if (speed_controller_) {
+  if (speed_controller_)
+  {
     speed_control_pub_ = nh_.advertise<geometry_msgs::TwistStamped>(SPEEDCONTROL_TOPIC, 1);
   }
 
@@ -73,7 +76,8 @@ PathPlanner::PathPlanner() : it_(nh_) {
 
 PathPlanner::~PathPlanner() {}
 
-void PathPlanner::start() {
+void PathPlanner::start()
+{
   ROS_INFO("Node started");
   // goal_position_ = cv::Point2f(6, 0);
   // goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
@@ -87,24 +91,28 @@ void PathPlanner::start() {
   force_generation_ = true;
 }
 
-void PathPlanner::stop() {
+void PathPlanner::stop()
+{
   ROS_INFO("Node stopped");
   goal_set_ = false;
   goal_position_ = cv::Point2f(0, 0);
   goal_cell_ = cv::Point2i(0, 0);
 }
 
-void PathPlanner::run() {
+void PathPlanner::run()
+{
   static bool send_waypoint = false;
   // force_generation_ = true; // DEBUG
 
-  if (laser_update_ || force_generation_) {
+  if (laser_update_ || force_generation_)
+  {
     ROS_DEBUG("New laser measuments");
     laser_update_ = false;
     generateOccupancyMap();
   }
 
-  if (new_occupancy_map_ || force_generation_) {
+  if (new_occupancy_map_ || force_generation_)
+  {
     new_occupancy_map_ = false;
     ROS_DEBUG("New occupancy map available");
     // sendMap(occupancy_map_); // DEBUG
@@ -114,45 +122,53 @@ void PathPlanner::run() {
   cv::Mat path_map = generatePathImg(occupancy_map_, drone_cell_, current_path_, ref_waypoints_);
   sendMap(path_map);
 
-  if (no_solution_) {
+  if (no_solution_)
+  {
     static cv::Point2f hover_position = drone_position_;
     ROS_WARN_ONCE("Solution not found");
     sendWaypoint(hover_position, 0.0);
     return;
   }
 
-  if (generate_path_ || force_generation_) {
+  if (generate_path_ || force_generation_)
+  {
     generate_path_ = false;
     generateNewPath();
     optimizePath();
     send_waypoint = true;
   }
 
-
-  if (!run_node_) {
+  if (!run_node_)
+  {
     return;
   }
 
-  if (!ending_maze_) {
-    if (drone_position_.x > x_safe_zone_) {
+  if (!ending_maze_)
+  {
+    if (drone_position_.x > x_safe_zone_)
+    {
       ending_maze_ = true;
       ROS_WARN("Ending maze");
     }
   }
   // TESTING YAW
   // if (current_path_.size() > 0 & send_waypoint)
-  if (ref_waypoints_.size() > 0) {
+  if (ref_waypoints_.size() > 0)
+  {
     float sending_yaw;
     cv::Point2f next_point = grid2coord(ref_waypoints_[0], img_h_, img_w_);
     double distance_to_next_point =
         sqrt(pow(next_point.x - drone_position_.x, 2) + pow(next_point.y - drone_position_.y, 2));
 
     // IF NEXT POINT IS REACHED: GET THE NEXT POINT
-    if (distance_to_next_point < next_point_reached_dist_) {
+    if (distance_to_next_point < next_point_reached_dist_)
+    {
       // Do not check future point
-      if (!check_future_point_) ref_waypoints_.erase(ref_waypoints_.begin());
+      if (!check_future_point_)
+        ref_waypoints_.erase(ref_waypoints_.begin());
 
-      if (check_future_point_) {
+      if (check_future_point_)
+      {
         // Check future point
         cv::Point2f future_point = grid2coord(ref_waypoints_[1], img_h_, img_w_);
 
@@ -163,12 +179,14 @@ void PathPlanner::run() {
 
         // IF DRONE IS LOOKING TO THE FUTURE POINT OR HAS ALREADY REACHED IT: SEND THE NEXT POINT
         if (abs(future_yaw - drone_yaw_) < M_PI_4 ||
-            distance_to_future_point < next_point_reached_dist_) {
+            distance_to_future_point < next_point_reached_dist_)
+        {
           ref_waypoints_.erase(ref_waypoints_.begin());
           send_waypoint = false;
         }
         // ELSE: SEND THE CURRENT POINT
-        else {
+        else
+        {
           sending_yaw = future_yaw;
           send_waypoint = true;
           // waypoint_pub_.publish(createTrajectoryFromPointMsg(next_point, fly_height_,
@@ -177,14 +195,16 @@ void PathPlanner::run() {
       }
     }
     // // IF NEXT POINT IS NOT REACHED: CONTINUE SENDIING THE SAME POINT
-    else {
+    else
+    {
       float next_yaw = atan2(next_point.y - drone_position_.y, next_point.x - drone_position_.x);
       sending_yaw = next_yaw;
       // waypoint_pub_.publish(createTrajectoryFromPointMsg(next_point, fly_height_, next_yaw));
       send_waypoint = true;
     }
 
-    if (send_waypoint) {
+    if (send_waypoint)
+    {
       sendWaypoint(next_point, sending_yaw);
     }
     // float next_yaw = atan2(next_point.y - drone_position_.y, next_point.x - drone_position_.x);
@@ -217,25 +237,33 @@ void PathPlanner::run() {
   // showMap(occupancy_map_, "ICUAS occupancy map", false);
   // showMap(path_map, "ICUAS path map", false);
 
-  if (force_generation_) force_generation_ = false;
+  if (force_generation_)
+    force_generation_ = false;
 }
 
-void PathPlanner::sendWaypoint(const cv::Point2f _next_point, const float _sending_yaw) {
-  if (!speed_controller_) {
+void PathPlanner::sendWaypoint(const cv::Point2f _next_point, const float _sending_yaw)
+{
+  if (!speed_controller_)
+  {
     waypoint_pub_.publish(createTrajectoryFromPointMsg(_next_point, fly_height_, _sending_yaw));
   }
-  if (speed_controller_) {
-    if (ending_maze_) {
-      ROS_INFO("Sending pose %f, %f", _next_point.x, _next_point.y);
+  if (speed_controller_)
+  {
+    if (ending_maze_ || no_solution_)
+    {
+      // ROS_INFO("Sending pose %f, %f", _next_point.x, _next_point.y);
       pose_pub_.publish(createPoseStampedMsg(_next_point, fly_height_, _sending_yaw));
-    } else {
+    }
+    else
+    {
       speed_control_pub_.publish(
           createSpeedReferenceMsg(drone_position_, _next_point, max_control_speed_));
     }
   }
 }
 
-void PathPlanner::generateOccupancyMap() {
+void PathPlanner::generateOccupancyMap()
+{
   static cv::Mat last_occ_map_sent(grid_size_, CV_8UC1);
   // Convert _img into a binary image  thresholding it and compute the distance map (in meters)
   cv::Mat binary_map, distance_map, dist_normalized_map;
@@ -244,8 +272,8 @@ void PathPlanner::generateOccupancyMap() {
   cv::threshold(laser_map_, binary_map, LASER2BIN_TH, 255, cv::THRESH_BINARY_INV);
   cv::distanceTransform(binary_map, distance_map, cv::DIST_L2, 3);
   dist_normalized_map =
-      distance_map / max_distance_th_;  // normalize distance map respect to the max dist
-  dist_normalized_map.setTo(1.0f, dist_normalized_map > 1.0f);  // clip image to 1.0
+      distance_map / max_distance_th_;                         // normalize distance map respect to the max dist
+  dist_normalized_map.setTo(1.0f, dist_normalized_map > 1.0f); // clip image to 1.0
 
   // Generate Occupancy Map (option 1)
   // cv::Mat binary_occupancy_map;
@@ -268,8 +296,10 @@ void PathPlanner::generateOccupancyMap() {
   // cv::imshow("dist_normalized_map", dist_normalized_map);
   // cv::imshow("binary_distance_map", binary_distance_map);
 
-  for (int i = 0; i < grid_size_.height; i++) {
-    for (int j = 0; j < grid_size_.width; j++) {
+  for (int i = 0; i < grid_size_.height; i++)
+  {
+    for (int j = 0; j < grid_size_.width; j++)
+    {
       // int current_value = occupancy_map_.at<uchar>(i, j);
       // if (current_value > 1)  // Just for no occuped cells
       // {
@@ -286,7 +316,8 @@ void PathPlanner::generateOccupancyMap() {
       float rate = float(zeros) / (submatrix.cols * submatrix.rows);
 
       // if (min_value < 1) {
-      if (rate > 0.3) {
+      if (rate > 0.3)
+      {
         occupancy_map_.at<uchar>(i, j) = 0;
         new_occupancy_map_ = true;
       }
@@ -316,7 +347,8 @@ void PathPlanner::generateOccupancyMap() {
   // img_drone_position = coord2img(drone_position_.x, drone_position_.y, img_h_, img_w_);
 }
 
-void showCombinedMap(std::vector<cv::Mat> maps, std::string window_name) {
+void showCombinedMap(std::vector<cv::Mat> maps, std::string window_name)
+{
   cv::Mat combined_map_top, combined_map_bot, combined_map;
   // for (auto m : maps)
   // {
@@ -324,16 +356,23 @@ void showCombinedMap(std::vector<cv::Mat> maps, std::string window_name) {
   //   ROS_INFO("Map type: %d", m.type());
   // }
 
-  for (int i = 0; i < maps.size(); i++) {
-    if (i == 0) {
+  for (int i = 0; i < maps.size(); i++)
+  {
+    if (i == 0)
+    {
       combined_map_top = maps[i];
-    } else if (i < 2) {
+    }
+    else if (i < 2)
+    {
       cv::hconcat(combined_map_top, maps[i], combined_map_top);
     }
 
-    if (i == 2) {
+    if (i == 2)
+    {
       combined_map_bot = maps[i];
-    } else if (i > 2 && i < 5) {
+    }
+    else if (i > 2 && i < 5)
+    {
       cv::hconcat(combined_map_bot, maps[i], combined_map_bot);
     }
   }
@@ -349,23 +388,28 @@ void showCombinedMap(std::vector<cv::Mat> maps, std::string window_name) {
   cv::waitKey(1);
 }
 
-void PathPlanner::checkCurrentPath() {
+void PathPlanner::checkCurrentPath()
+{
   // Check current path is not empty
-  if (current_path_.size() == 0) {
+  if (current_path_.size() == 0)
+  {
     generate_path_ = true;
     return;
   }
 
   // Check if path points are free on the map
-  for (auto &point : current_path_) {
-    if (occupancy_map_.at<uchar>(point.x, point.y) == 0) {
+  for (auto &point : current_path_)
+  {
+    if (occupancy_map_.at<uchar>(point.x, point.y) == 0)
+    {
       generate_path_ = true;
       break;
     }
   }
 }
 
-void PathPlanner::generateNewPath() {
+void PathPlanner::generateNewPath()
+{
   ROS_DEBUG("Generating new path");
   current_path_.clear();
 
@@ -376,34 +420,40 @@ void PathPlanner::generateNewPath() {
   current_path_ = planner_algorithm_.solveGraph();
 }
 
-void PathPlanner::optimizePath() {
+void PathPlanner::optimizePath()
+{
   ROS_DEBUG("Optimizing path");
   ref_waypoints_.clear();
 
-  if (current_path_.size() == 0) {
+  if (current_path_.size() == 0)
+  {
     ROS_ERROR("Path is empty");
     no_solution_ = true;
     return;
   }
 
   bool optimize = true;
-  if (!optimize) {
+  if (!optimize)
+  {
     ref_waypoints_ = current_path_;
     return;
   }
 
-  if (!current_path_.size()) {
+  if (!current_path_.size())
+  {
     ROS_ERROR("QUEEEEEEEEEEEEEEEEEEE");
   }
   ref_waypoints_.emplace_back(current_path_[0]);
 
   cv::Point2i path_point;
 
-  for (int i = 1; i < current_path_.size(); i++) {
+  for (int i = 1; i < current_path_.size(); i++)
+  {
     path_point = current_path_[i];
     // ROS_INFO("Path point: %.2i, %.2i", path_point.x, path_point.y);
     // ROS_INFO("Last ref point: %.2i, %.2i", ref_waypoints_.back().x, ref_waypoints_.back().y);
-    if (path_point.x == ref_waypoints_.back().x || path_point.y == ref_waypoints_.back().y) {
+    if (path_point.x == ref_waypoints_.back().x || path_point.y == ref_waypoints_.back().y)
+    {
       continue;
     }
 
@@ -457,28 +507,34 @@ void PathPlanner::optimizePath() {
   return filtered_ranges;
 } */
 
-float computeMedian(const std::deque<float> &_ranges) {
+float computeMedian(const std::deque<float> &_ranges)
+{
   // create ordered vector
   std::vector<float> ordered_ranges;
   ordered_ranges.reserve(_ranges.size());
   int n_nans = 0;
-  for (auto &range : _ranges) {
-    if (std::isnan(range)) {
+  for (auto &range : _ranges)
+  {
+    if (std::isnan(range))
+    {
       n_nans++;
       continue;
     }
     ordered_ranges.emplace_back(range);
   }
-  if (n_nans > _ranges.size() - n_nans) {
+  if (n_nans > _ranges.size() - n_nans)
+  {
     return std::nan("");
   }
   std::sort(ordered_ranges.begin(), ordered_ranges.end());
   return ordered_ranges[ordered_ranges.size() / 2];
 }
 
-std::vector<float> removeRangeOutliers(const std::vector<float> &_ranges) {
+std::vector<float> removeRangeOutliers(const std::vector<float> &_ranges)
+{
   int n_samples_median = 9;
-  if (n_samples_median % 2 == 0) {
+  if (n_samples_median % 2 == 0)
+  {
     n_samples_median++;
   }
 
@@ -487,34 +543,42 @@ std::vector<float> removeRangeOutliers(const std::vector<float> &_ranges) {
 
   filtered_ranges.reserve(_ranges.size());
 
-  for (int i = 0; i < n_samples_median; i++) {
+  for (int i = 0; i < n_samples_median; i++)
+  {
     median_queue.push_back(_ranges[i]);
   }
 
-  for (int i = 0; i < _ranges.size(); i++) {
-    if ((i < n_samples_median / 2 + 1) || (i > _ranges.size() - n_samples_median / 2 - 1)) {
+  for (int i = 0; i < _ranges.size(); i++)
+  {
+    if ((i < n_samples_median / 2 + 1) || (i > _ranges.size() - n_samples_median / 2 - 1))
+    {
       filtered_ranges.emplace_back(std::nanf(""));
       continue;
     }
 
     median_queue.push_back(_ranges[i + n_samples_median / 2]);
-    if (median_queue.size() >= n_samples_median) {
+    if (median_queue.size() >= n_samples_median)
+    {
       filtered_ranges.emplace_back(computeMedian(median_queue));
       median_queue.pop_front();
-    } else {
+    }
+    else
+    {
       filtered_ranges.emplace_back(_ranges[i]);
     }
   }
 
   // check if size is correct
-  if (filtered_ranges.size() != _ranges.size()) {
+  if (filtered_ranges.size() != _ranges.size())
+  {
     ROS_ERROR("Filtered ranges size is not equal to original ranges size");
   }
 
   return filtered_ranges;
 }
 
-sensor_msgs::LaserScan filterLaserScan(const sensor_msgs::LaserScan &msg) {
+sensor_msgs::LaserScan filterLaserScan(const sensor_msgs::LaserScan &msg)
+{
   sensor_msgs::LaserScan filtered_scan;
   filtered_scan.header = msg.header;
   filtered_scan.angle_min = msg.angle_min;
@@ -529,16 +593,18 @@ sensor_msgs::LaserScan filterLaserScan(const sensor_msgs::LaserScan &msg) {
   return filtered_scan;
 }
 
-void show_image_resized(const std::string &_title, const cv::Mat &_image) {
+void show_image_resized(const std::string &_title, const cv::Mat &_image)
+{
   cv::Mat map_resized = cv::Mat::zeros(_image.size() * 5, _image.type());
   cv::resize(_image, map_resized, map_resized.size(), 0, 0, cv::INTER_NEAREST);
   cv::imshow(_title, map_resized);
 }
 
-cv::Mat &filterLaserMap(cv::Mat &mat) {
+cv::Mat &filterLaserMap(cv::Mat &mat)
+{
   // show_image_resized("local_laser_map", mat);
   // generate zeros matrix
-  ROS_INFO_ONCE("Generating zeros matrix");
+  // ROS_INFO_ONCE("Generating zeros matrix");
   static cv::Mat prev_mat = cv::Mat::zeros(mat.size(), mat.type());
   static cv::Mat out = cv::Mat::zeros(mat.size(), mat.type());
 
@@ -569,15 +635,16 @@ cv::Mat &filterLaserMap(cv::Mat &mat) {
   prev_mat = cv::max(prev_mat, 0.0f);
   prev_mat = cv::min(prev_mat, maximum_value);
 
-  show_image_resized("prev_mat", prev_mat);
-  cv::waitKey(20);
+  // show_image_resized("prev_mat", prev_mat);
+  // cv::waitKey(20);
 
   out = prev_mat.clone();
   cv::threshold(out, out, threshold, maximum_value, cv::THRESH_BINARY);
   return out;
 }
 
-void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
+void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg)
+{
   // auto laser_filtered = filterLaserScan(_msg);
   auto &laser_filtered = _msg;
 
@@ -592,7 +659,8 @@ void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
   if (!tf_listener_.waitForTransform(
           _msg.header.frame_id, ref_frame_,
           _msg.header.stamp + ros::Duration().fromSec(_msg.ranges.size() * _msg.time_increment),
-          ros::Duration(1.0))) {
+          ros::Duration(1.0)))
+  {
     return;
   }
 
@@ -602,8 +670,10 @@ void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
 
   static cv::Mat local_laser_map = cv::Mat::zeros(laser_map_.size(), laser_map_.type());
   cv::Point2i img_point;
-  for (auto point : point_cloud.points) {
-    if (point.z > z_min_th_) {
+  for (auto point : point_cloud.points)
+  {
+    if (point.z > z_min_th_)
+    {
       img_point = coord2img(point.x, point.y, img_h_, img_w_);
       local_laser_map.at<uchar>(img_point.x, img_point.y) = 255;
       laser_update_ = true;
@@ -614,7 +684,8 @@ void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
   local_laser_map = cv::Mat::zeros(laser_map_.size(), laser_map_.type());
 }
 
-void PathPlanner::positionCallback(const nav_msgs::Odometry &_msg) {
+void PathPlanner::positionCallback(const nav_msgs::Odometry &_msg)
+{
   drone_position_.x = _msg.pose.pose.position.x;
   drone_position_.y = _msg.pose.pose.position.y;
   drone_yaw_ = tf::getYaw(_msg.pose.pose.orientation);
@@ -623,8 +694,10 @@ void PathPlanner::positionCallback(const nav_msgs::Odometry &_msg) {
 }
 
 bool PathPlanner::controlNodeSrv(std_srvs::SetBool::Request &_request,
-                                 std_srvs::SetBool::Response &_response) {
-  if (run_node_ == _request.data) {
+                                 std_srvs::SetBool::Response &_response)
+{
+  if (run_node_ == _request.data)
+  {
     _response.success = false;
     _response.message = "Run node already set to " + std::to_string(run_node_);
     return true;
@@ -635,9 +708,12 @@ bool PathPlanner::controlNodeSrv(std_srvs::SetBool::Request &_request,
   _response.success = true;
   _response.message = "Run node set to " + std::to_string(run_node_);
 
-  if (run_node_) {
+  if (run_node_)
+  {
     start();
-  } else {
+  }
+  else
+  {
     stop();
   }
 
@@ -645,7 +721,8 @@ bool PathPlanner::controlNodeSrv(std_srvs::SetBool::Request &_request,
 }
 
 bool PathPlanner::setGoalSrv(path_planner::setGoalPoint::Request &_request,
-                             path_planner::setGoalPoint::Response &_response) {
+                             path_planner::setGoalPoint::Response &_response)
+{
   goal_position_.x = _request.goal.point.x;
   goal_position_.y = _request.goal.point.y;
 
@@ -663,10 +740,12 @@ bool PathPlanner::setGoalSrv(path_planner::setGoalPoint::Request &_request,
   return true;
 }
 
-void PathPlanner::setGoalCallback(const geometry_msgs::PoseStamped &_msg) {
+void PathPlanner::setGoalCallback(const geometry_msgs::PoseStamped &_msg)
+{
   float distance = sqrt(pow(_msg.pose.position.x - drone_position_.x, 2) +
                         pow(_msg.pose.position.y - drone_position_.y, 2));
-  if (distance < 5.0) {
+  if (distance < 5.0)
+  {
     return;
   }
 
@@ -683,7 +762,8 @@ void PathPlanner::setGoalCallback(const geometry_msgs::PoseStamped &_msg) {
 
 // PUBLISH
 
-void PathPlanner::sendMap(cv::Mat _map) {
+void PathPlanner::sendMap(cv::Mat _map)
+{
   sensor_msgs::ImagePtr output_image_msg =
       cv_bridge::CvImage(std_msgs::Header(), "rgb8", _map).toImageMsg();
   image_publisher_.publish(output_image_msg);
@@ -692,21 +772,26 @@ void PathPlanner::sendMap(cv::Mat _map) {
 // DEBUG
 
 void PathPlanner::showMap(const cv::Mat &_map, const std::string &_map_name,
-                          const bool _add_drone) {
+                          const bool _add_drone)
+{
   cv::namedWindow(_map_name, cv::WINDOW_FREERATIO);
   // Generate image to show
-  if (_add_drone) {
+  if (_add_drone)
+  {
     cv::Point2i img_drone_position;
     img_drone_position = coord2img(drone_position_.x, drone_position_.y, img_h_, img_w_);
     cv::Mat map_img = generateShowImg(_map, img_drone_position);
     cv::imshow(_map_name, map_img);
-  } else {
+  }
+  else
+  {
     cv::imshow(_map_name, _map);
   }
   cv::waitKey(1);
 }
 
-cv::Mat PathPlanner::generateShowImg(const cv::Mat &_img, const cv::Point2i &_drone_px) {
+cv::Mat PathPlanner::generateShowImg(const cv::Mat &_img, const cv::Point2i &_drone_px)
+{
   cv::Mat color_img, show_img;
   cv::cvtColor(_img, color_img, cv::COLOR_GRAY2BGR);
 
@@ -718,18 +803,21 @@ cv::Mat PathPlanner::generateShowImg(const cv::Mat &_img, const cv::Point2i &_dr
 
 cv::Mat generatePathImg(const cv::Mat &_map, const cv::Point2i &_drone_px,
                         const std::vector<cv::Point2i> &_path,
-                        const std::vector<cv::Point2i> &_waypoints) {
+                        const std::vector<cv::Point2i> &_waypoints)
+{
   cv::Mat path_img, color_img;
 
   path_img = _map.clone();
 
-  for (auto &point : _path) {
+  for (auto &point : _path)
+  {
     path_img.at<uchar>(point.x, point.y) = 125;
   }
 
   cv::cvtColor(path_img, color_img, cv::COLOR_GRAY2BGR);
 
-  for (auto &waypoint : _waypoints) {
+  for (auto &waypoint : _waypoints)
+  {
     color_img.at<cv::Vec3b>(waypoint.x, waypoint.y) = cv::Vec3b(0, 255, 0);
   }
 
@@ -741,7 +829,8 @@ cv::Mat generatePathImg(const cv::Mat &_map, const cv::Point2i &_drone_px,
 // AUXILIAR FUNCTION
 
 cv::Point2i PathPlanner::coord2img(const float _x, const float _y, const int _img_h,
-                                   const int _img_w) {
+                                   const int _img_w)
+{
   cv::Point2i img_point;
   float w = _img_w / 2;
   float h = _img_h / 2;
@@ -758,30 +847,30 @@ cv::Point2i PathPlanner::coord2img(const float _x, const float _y, const int _im
   img_point.y = std::max(img_point.y, 0);
   img_point.y = std::min(img_point.y, _img_w - 1);
 
-
   return img_point;
 }
 
 cv::Point2i PathPlanner::coord2grid(const float _x, const float _y, const int _img_h,
-                                    const int _img_w) {
+                                    const int _img_w)
+{
   cv::Point2i img_drone_position, grid_drone_position;
   img_drone_position = coord2img(_x, _y, _img_h, _img_w);
 
-  grid_drone_position.x = int((img_drone_position.x / occ_grid_size_));  // x
-  grid_drone_position.y = int((img_drone_position.y / occ_grid_size_));  // y
-
+  grid_drone_position.x = int((img_drone_position.x / occ_grid_size_)); // x
+  grid_drone_position.y = int((img_drone_position.y / occ_grid_size_)); // y
 
   return grid_drone_position;
 }
 
-cv::Point2f PathPlanner::grid2coord(const cv::Point2i &_point, const int _img_h, const int _img_w) {
+cv::Point2f PathPlanner::grid2coord(const cv::Point2i &_point, const int _img_h, const int _img_w)
+{
   cv::Point2f coord_point;
 
   // ROS_INFO("Point: %d, %d", _point.x, _point.y);
   // ROS_INFO("Img h: %d, w: %d", _img_h / 2, _img_w / 2);
   // ROS_INFO("%d, %d", _point.x * OCC_GRID_SIZE, _point.y * OCC_GRID_SIZE);
-  coord_point.x = (((double) _img_h / 2.0) - (_point.x * occ_grid_size_)) / img_resolution_;
-  coord_point.y = (((double) _img_w / 2.0) - (_point.y * occ_grid_size_)) / img_resolution_;
+  coord_point.x = (((double)_img_h / 2.0) - (_point.x * occ_grid_size_)) / img_resolution_;
+  coord_point.y = (((double)_img_w / 2.0) - (_point.y * occ_grid_size_)) / img_resolution_;
   // ROS_INFO("First x: %f, y: %f", coord_point.x, coord_point.y);
   coord_point.x -= (occ_grid_size_ / 2) / img_resolution_;
   coord_point.y -= (occ_grid_size_ / 2) / img_resolution_;
@@ -796,12 +885,12 @@ cv::Point2f PathPlanner::grid2coord(const cv::Point2i &_point, const int _img_h,
   // coord_point.x = (int) coord_point.x;
   // coord_point.y = (int) coord_point.y;
 
-
   return coord_point;
 }
 
 trajectory_msgs::MultiDOFJointTrajectoryPoint createTrajectoryFromPointMsg(
-    const cv::Point2f &_point, const float _height, const float _yaw) {
+    const cv::Point2f &_point, const float _height, const float _yaw)
+{
   // convert yaw to quaternion
   tf::Quaternion q;
   q.setRPY(0.0, 0.0, _yaw);
@@ -830,7 +919,8 @@ trajectory_msgs::MultiDOFJointTrajectoryPoint createTrajectoryFromPointMsg(
 
 // Begin of SPEED_CONTROLLER
 geometry_msgs::TwistStamped createSpeedReferenceMsg(cv::Point2d _current_position,
-                                                    cv::Point2d _target_position, float _speed) {
+                                                    cv::Point2d _target_position, float _speed)
+{
   cv::Point2d speed_to_follow = (_target_position - _current_position);
   float speed_to_follow_z = 0;
   Eigen::Vector3d speed_to_follow_vector(speed_to_follow.x, speed_to_follow.y, speed_to_follow_z);
@@ -846,7 +936,8 @@ geometry_msgs::TwistStamped createSpeedReferenceMsg(cv::Point2d _current_positio
 }
 
 geometry_msgs::PoseStamped createPoseStampedMsg(const cv::Point2f &_point, const float _height,
-                                                const float _yaw) {
+                                                const float _yaw)
+{
   // convert yaw to quaternion
   tf::Quaternion q;
   q.setRPY(0.0, 0.0, _yaw);

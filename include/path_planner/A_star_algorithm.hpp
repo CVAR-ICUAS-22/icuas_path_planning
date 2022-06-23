@@ -88,7 +88,8 @@ public:
       g_cost_ = parent_ptr_->get_g_cost() + 1;
       if (!(parent_ptr_->get_coordinates().x == point.x || parent_ptr_->get_coordinates().y == point.y))
       {
-        g_cost_ += 1;
+        // g_cost_ += 1;
+        g_cost_ += 0;
       }
     }
     f_cost_ = g_cost_ + h_cost_;
@@ -121,10 +122,10 @@ public:
     valid_movements_.emplace_back(0, 1);
     valid_movements_.emplace_back(1, 0);
 
-    // valid_movements_.emplace_back(-1, -1);
-    // valid_movements_.emplace_back(-1, 1);
-    // valid_movements_.emplace_back(1, -1);
-    // valid_movements_.emplace_back(1, 1);
+    valid_movements_.emplace_back(-1, -1);
+    valid_movements_.emplace_back(-1, 1);
+    valid_movements_.emplace_back(1, -1);
+    valid_movements_.emplace_back(1, 1);
   }
 
   void setOcuppancyGrid(const cv::Mat &mat) { ocuppancy_grid_ = mat.clone(); }
