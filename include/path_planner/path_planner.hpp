@@ -70,7 +70,7 @@ public:
 
   void projectedMapCallback(const nav_msgs::OccupancyGrid &_msg);
   void laserscanCallback(const sensor_msgs::LaserScan &_msg);
-  void positionCallback(const nav_msgs::Odometry &_msg);
+  void positionCallback(const geometry_msgs::PoseStamped &_msg);
   bool controlNodeSrv(std_srvs::SetBool::Request &_request,
                       std_srvs::SetBool::Response &_response);
   bool setGoalSrv(path_planner::setGoalPoint::Request &_request,

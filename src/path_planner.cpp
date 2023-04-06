@@ -669,10 +669,10 @@ void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
   local_laser_map = cv::Mat::zeros(laser_map_.size(), laser_map_.type());
 }
 
-void PathPlanner::positionCallback(const nav_msgs::Odometry &_msg) {
-  drone_position_.x = _msg.pose.pose.position.x;
-  drone_position_.y = _msg.pose.pose.position.y;
-  drone_yaw_ = tf::getYaw(_msg.pose.pose.orientation);
+void PathPlanner::positionCallback(const geometry_msgs::PoseStamped &_msg) {
+  drone_position_.x = _msg.pose.position.x;
+  drone_position_.y = _msg.pose.position.y;
+  drone_yaw_ = tf::getYaw(_msg.pose.orientation);
 
   drone_cell_ =
       coord2grid(drone_position_.x, drone_position_.y, img_h_, img_w_);
