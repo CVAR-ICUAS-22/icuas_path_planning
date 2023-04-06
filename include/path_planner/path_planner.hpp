@@ -29,7 +29,7 @@
 
 #define PROJECTED_MAP_TOPIC "/projected_map"
 #define LASERSCAN_TOPIC "scan"
-#define DRONEPOSITION_TOPIC "odometry"
+#define DRONEPOSITION_TOPIC "position"
 #define WAYPOINT_TOPIC "position_hold/trajectory"
 #define SPEEDCONTROL_TOPIC "motion_reference/speed"
 #define POSE_TOPIC "motion_reference/pose"
