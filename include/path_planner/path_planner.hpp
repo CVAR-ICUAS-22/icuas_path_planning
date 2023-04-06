@@ -27,7 +27,7 @@
 #include <grid_map_cv/GridMapCvConverter.hpp>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 
-#define PROJECTED_MAP_TOPIC "/octomap/projected_map"
+#define PROJECTED_MAP_TOPIC "/projected_map"
 #define LASERSCAN_TOPIC "scan"
 #define DRONEPOSITION_TOPIC "odometry"
 #define WAYPOINT_TOPIC "position_hold/trajectory"
