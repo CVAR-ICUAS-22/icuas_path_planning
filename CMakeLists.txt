@@ -16,6 +16,7 @@ set(PROJECT_DEPENDENCIES
   image_transport
   message_generation
   message_runtime
+  grid_map
 )
 
 find_package(catkin REQUIRED COMPONENTS
