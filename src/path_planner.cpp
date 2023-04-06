@@ -624,7 +624,7 @@ void PathPlanner::projectedMapCallback(const nav_msgs::OccupancyGrid &_msg) {
                                                    temporal_grid_map);
   cv::Mat temporal_image;
   grid_map::GridMapCvConverter::toImage<unsigned char, 1>(
-      temporal_grid_map, "elevation", CV_8UC1, 100, 0, temporal_image);
+      temporal_grid_map, "elevation", CV_8UC1, 0, 100, temporal_image);
   showMap(temporal_image, "Projected map", false);
 }
 
