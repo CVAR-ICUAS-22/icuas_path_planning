@@ -5,6 +5,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <image_transport/image_transport.h>
 #include <laser_geometry/laser_geometry.h>
+#include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
