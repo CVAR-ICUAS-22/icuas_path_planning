@@ -67,7 +67,7 @@ PathPlanner::PathPlanner() : it_(nh_) {
   grid_size_.width = int((map_w / occ_map_grid_size));
   grid_size_.height = int((map_h / occ_map_grid_size));
   occupancy_map_ =
-      cv::Mat::ones(grid_size_.height, grid_size_.width, CV_8UC1) * 255;
+      cv::Mat::zeros(grid_size_.height, grid_size_.width, CV_8UC1) * 255;
   max_distance_th_ = max_distance * img_resolution_;
 
   if (speed_controller_) {
