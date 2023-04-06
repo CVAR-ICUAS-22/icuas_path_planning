@@ -25,7 +25,7 @@
 
 #include <grid_map_core/grid_map_core.hpp>
 #include <grid_map_cv/GridMapCvConverter.hpp>
-#include <grid_map_cv/GridMapCvProcessing.hpp>
+#include <grid_map_ros/GridMapRosConverter.hpp>
 
 #define PROJECTED_MAP_TOPIC "/octomap/projected_map"
 #define LASERSCAN_TOPIC "scan"
