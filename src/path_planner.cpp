@@ -5,8 +5,9 @@
 PathPlanner::PathPlanner() : it_(nh_) {
   projected_map_sub_ = nh_.subscribe(PROJECTED_MAP_TOPIC, 1,
                                      &PathPlanner::projectedMapCallback, this);
-  laserscan_sub_ =
-      nh_.subscribe(LASERSCAN_TOPIC, 1, &PathPlanner::laserscanCallback, this);
+  // laserscan_sub_ =
+  //     nh_.subscribe(LASERSCAN_TOPIC, 1, &PathPlanner::laserscanCallback,
+  //     this);
   droneposition_sub_ = nh_.subscribe(DRONEPOSITION_TOPIC, 1,
                                      &PathPlanner::positionCallback, this);
 
@@ -110,18 +111,19 @@ void PathPlanner::run() {
   static bool send_waypoint = false;
   // force_generation_ = true; // DEBUG
 
-  if (laser_update_ || force_generation_) {
-    ROS_DEBUG("New laser measuments");
-    laser_update_ = false;
-    generateOccupancyMap();
-  }
+  // OLD
+  // if (laser_update_ || force_generation_) {
+  //   ROS_DEBUG("New laser measuments");
+  //   laser_update_ = false;
+  //   generateOccupancyMap();
+  // }
 
-  if (new_occupancy_map_ || force_generation_) {
-    new_occupancy_map_ = false;
-    ROS_DEBUG("New occupancy map available");
-    // sendMap(occupancy_map_); // DEBUG
-    checkCurrentPath();
-  }
+  // if (new_occupancy_map_ || force_generation_) {
+  //   new_occupancy_map_ = false;
+  //   ROS_DEBUG("New occupancy map available");
+  //   // sendMap(occupancy_map_); // DEBUG
+  //   checkCurrentPath();
+  // }
 
   cv::Mat path_map = generatePathImg(occupancy_map_, drone_cell_, current_path_,
                                      ref_waypoints_);
@@ -622,10 +624,9 @@ void PathPlanner::projectedMapCallback(const nav_msgs::OccupancyGrid &_msg) {
   grid_map::GridMap temporal_grid_map;
   grid_map::GridMapRosConverter::fromOccupancyGrid(_msg, "elevation",
                                                    temporal_grid_map);
-  cv::Mat temporal_image;
   grid_map::GridMapCvConverter::toImage<unsigned char, 1>(
-      temporal_grid_map, "elevation", CV_8UC1, temporal_image);
-  showMap(temporal_image, "Projected map", false);
+      temporal_grid_map, "elevation", CV_8UC1, occupancy_map_);
+  showMap(occupancy_map_, "Projected map", true);
 }
 
 void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
