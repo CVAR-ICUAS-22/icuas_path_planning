@@ -6,8 +6,6 @@ PathPlanner::PathPlanner() : it_(nh_) {
   occupancy_image_sub_ = nh_.subscribe(
       OCCUPANCY_IMAGE_TOPIC, 1, &PathPlanner::occupancyImageCallback, this);
 
-  projected_map_sub_ = nh_.subscribe(PROJECTED_MAP_TOPIC, 1,
-                                     &PathPlanner::projectedMapCallback, this);
   // laserscan_sub_ =
   //     nh_.subscribe(LASERSCAN_TOPIC, 1, &PathPlanner::laserscanCallback,
   //     this);
@@ -621,15 +619,6 @@ cv::Mat &filterLaserMap(cv::Mat &mat) {
   out = prev_mat.clone();
   cv::threshold(out, out, threshold, maximum_value, cv::THRESH_BINARY);
   return out;
-}
-
-void PathPlanner::projectedMapCallback(const nav_msgs::OccupancyGrid &_msg) {
-  grid_map::GridMap temporal_grid_map;
-  grid_map::GridMapRosConverter::fromOccupancyGrid(_msg, "elevation",
-                                                   temporal_grid_map);
-  grid_map::GridMapCvConverter::toImage<unsigned char, 1>(
-      temporal_grid_map, "elevation", CV_8UC1, occupancy_map_);
-  showMap(occupancy_map_, "Projected map", true);
 }
 
 void PathPlanner::occupancyImageCallback(const sensor_msgs::Image &_msg) {
