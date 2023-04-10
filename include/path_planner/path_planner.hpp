@@ -8,6 +8,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
+#include <sensor_msgs/Image.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud.h>
 #include <std_srvs/SetBool.h>
@@ -27,6 +28,7 @@
 #include <grid_map_cv/GridMapCvConverter.hpp>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 
+#define OCCUPANCY_IMAGE_TOPIC "/occupancy_image"
 #define PROJECTED_MAP_TOPIC "/projected_map"
 #define LASERSCAN_TOPIC "scan"
 #define DRONEPOSITION_TOPIC "position"
@@ -51,6 +53,7 @@ public:
   void setGoal();
 
   ros::NodeHandle nh_;
+  ros::Subscriber occupancy_image_sub_;
   ros::Subscriber projected_map_sub_;
   ros::Subscriber laserscan_sub_;
   ros::Subscriber droneposition_sub_;

@@ -3,6 +3,9 @@
 #include "geometry_msgs/PoseStamped.h"
 
 PathPlanner::PathPlanner() : it_(nh_) {
+  occupancy_image_sub_ = nh_.subscribe(
+      OCCUPANCY_IMAGE_TOPIC, 1, &PathPlanner::occupancyImageCallback, this);
+
   projected_map_sub_ = nh_.subscribe(PROJECTED_MAP_TOPIC, 1,
                                      &PathPlanner::projectedMapCallback, this);
   // laserscan_sub_ =
@@ -627,6 +630,18 @@ void PathPlanner::projectedMapCallback(const nav_msgs::OccupancyGrid &_msg) {
   grid_map::GridMapCvConverter::toImage<unsigned char, 1>(
       temporal_grid_map, "elevation", CV_8UC1, occupancy_map_);
   showMap(occupancy_map_, "Projected map", true);
+}
+
+void PathPlanner::occupancyImageCallback(const sensor_msgs::Image &_msg) {
+  cv_bridge::CvImagePtr cv_ptr;
+  try {
+    cv_ptr = cv_bridge::toCvCopy(_msg, sensor_msgs::image_encodings::MONO8);
+  } catch (cv_bridge::Exception &e) {
+    ROS_ERROR("cv_bridge exception: %s", e.what());
+    return;
+  }
+  cv::Mat occupancy_map = cv_ptr->image;
+  showMap(occupancy_map, "Projected map", true);
 }
 
 void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
