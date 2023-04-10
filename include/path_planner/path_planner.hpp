@@ -71,6 +71,7 @@ public:
   laser_geometry::LaserProjection laser_projector_;
   AStarPlanner planner_algorithm_;
 
+  void occupancyImageCallback(const sensor_msgs::Image &_msg);
   void projectedMapCallback(const nav_msgs::OccupancyGrid &_msg);
   void laserscanCallback(const sensor_msgs::LaserScan &_msg);
   void positionCallback(const geometry_msgs::PoseStamped &_msg);
