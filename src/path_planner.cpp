@@ -20,8 +20,9 @@ PathPlanner::PathPlanner() : it_(nh_) {
   control_node_srv =
       nh_.advertiseService(CONTROLNODE_SRV, &PathPlanner::controlNodeSrv, this);
   // set_goal_srv = nh_.advertiseService(SETGOAL_SRV, &PathPlanner::setGoalSrv,
-  // this); set_goal_sub_ = nh_.subscribe(SETGOAL_TOPIC, 1,
-  // &PathPlanner::setGoalCallback, this);
+  // this);
+  set_goal_sub_ =
+      nh_.subscribe(SETGOAL_TOPIC, 1, &PathPlanner::setGoalCallback, this);
   float map_h;
   float map_w;
   float max_distance;
