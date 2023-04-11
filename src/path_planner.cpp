@@ -130,7 +130,7 @@ void PathPlanner::run() {
   cv::Mat path_map = generatePathImg(occupancy_map_, drone_cell_, current_path_,
                                      ref_waypoints_);
   sendMap(path_map);
-  showMap(path_map, "RUN MAP", true);
+  showMap(path_map, "RUN MAP", false);
 
   if (no_solution_) {
     static cv::Point2f hover_position = drone_position_;
