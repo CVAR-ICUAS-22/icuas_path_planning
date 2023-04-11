@@ -61,7 +61,7 @@ public:
 
   ros::ServiceServer control_node_srv;
   // ros::ServiceServer set_goal_srv;
-  // ros::Subscriber set_goal_sub_;
+  ros::Subscriber set_goal_sub_;
 
   image_transport::ImageTransport it_;
   image_transport::Publisher image_publisher_;
