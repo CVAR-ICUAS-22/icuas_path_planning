@@ -24,10 +24,6 @@
 #include "A_star_algorithm.hpp"
 #include "path_planner/setGoalPoint.h"
 
-#include <grid_map_core/grid_map_core.hpp>
-#include <grid_map_cv/GridMapCvConverter.hpp>
-#include <grid_map_ros/GridMapRosConverter.hpp>
-
 #define OCCUPANCY_IMAGE_TOPIC "/occupancy_image"
 #define PROJECTED_MAP_TOPIC "/projected_map"
 #define LASERSCAN_TOPIC "scan"
