@@ -527,7 +527,9 @@ cv::Point2i PathPlanner::coord2img(const float _x, const float _y,
                                    const int _img_h, const int _img_w) {
   cv::Point2i img_point;
   float w = _img_w / 2;
+  w = 0;
   float h = _img_h / 2;
+  h = 0;
   float x = _x * img_resolution_;
   float y = _y * img_resolution_;
   img_point.x = int(h - x);
