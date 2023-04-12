@@ -372,162 +372,10 @@ void PathPlanner::optimizePath() {
 
 // CALLBACK
 
-/* std::vector<float> removeRangeOutliers(const std::vector<float> &_ranges) {
-
-  const int n_samples_without_nan = 2;
-  std::vector<float> filtered_ranges;
-  filtered_ranges.reserve(_ranges.size());
-
-  int last_nan_index_ = 0;
-
-  for (int i = 0; i < _ranges.size() - n_samples_without_nan; i++) {
-    const int displacement = i + n_samples_without_nan;
-    if (std::isnan(_ranges[displacement])) {
-      last_nan_index_ = displacement;
-      continue;
-    }
-    if (std::abs(last_nan_index_ - i) > n_samples_without_nan) {
-      filtered_ranges.emplace_back(_ranges[i]);
-    } else {
-      filtered_ranges.emplace_back(std::nan(""));
-    }
-  }
-
-  for (int i = _ranges.size() - n_samples_without_nan; i < _ranges.size(); i++)
-{ filtered_ranges.emplace_back(std::nan(""));
-  }
-
-  // check if size is correct
-  if (filtered_ranges.size() != _ranges.size()) {
-    ROS_ERROR("Filtered ranges size is not equal to original ranges size");
-  }
-
-  return filtered_ranges;
-} */
-
-float computeMedian(const std::deque<float> &_ranges) {
-  // create ordered vector
-  std::vector<float> ordered_ranges;
-  ordered_ranges.reserve(_ranges.size());
-  int n_nans = 0;
-  for (auto &range : _ranges) {
-    if (std::isnan(range)) {
-      n_nans++;
-      continue;
-    }
-    ordered_ranges.emplace_back(range);
-  }
-  if (n_nans > _ranges.size() - n_nans) {
-    return std::nan("");
-  }
-  std::sort(ordered_ranges.begin(), ordered_ranges.end());
-  return ordered_ranges[ordered_ranges.size() / 2];
-}
-
-std::vector<float> removeRangeOutliers(const std::vector<float> &_ranges) {
-  int n_samples_median = 9;
-  if (n_samples_median % 2 == 0) {
-    n_samples_median++;
-  }
-
-  std::vector<float> filtered_ranges;
-  std::deque<float> median_queue;
-
-  filtered_ranges.reserve(_ranges.size());
-
-  for (int i = 0; i < n_samples_median; i++) {
-    median_queue.push_back(_ranges[i]);
-  }
-
-  for (int i = 0; i < _ranges.size(); i++) {
-    if ((i < n_samples_median / 2 + 1) ||
-        (i > _ranges.size() - n_samples_median / 2 - 1)) {
-      filtered_ranges.emplace_back(std::nanf(""));
-      continue;
-    }
-
-    median_queue.push_back(_ranges[i + n_samples_median / 2]);
-    if (median_queue.size() >= n_samples_median) {
-      filtered_ranges.emplace_back(computeMedian(median_queue));
-      median_queue.pop_front();
-    } else {
-      filtered_ranges.emplace_back(_ranges[i]);
-    }
-  }
-
-  // check if size is correct
-  if (filtered_ranges.size() != _ranges.size()) {
-    ROS_ERROR("Filtered ranges size is not equal to original ranges size");
-  }
-
-  return filtered_ranges;
-}
-
-sensor_msgs::LaserScan filterLaserScan(const sensor_msgs::LaserScan &msg) {
-  sensor_msgs::LaserScan filtered_scan;
-  filtered_scan.header = msg.header;
-  filtered_scan.angle_min = msg.angle_min;
-  filtered_scan.angle_max = msg.angle_max;
-  filtered_scan.angle_increment = msg.angle_increment;
-  filtered_scan.range_min = msg.range_min;
-  filtered_scan.range_max = msg.range_max;
-  filtered_scan.intensities = msg.intensities;
-
-  filtered_scan.ranges = std::move(removeRangeOutliers(msg.ranges));
-
-  return filtered_scan;
-}
-
 void show_image_resized(const std::string &_title, const cv::Mat &_image) {
   cv::Mat map_resized = cv::Mat::zeros(_image.size() * 5, _image.type());
   cv::resize(_image, map_resized, map_resized.size(), 0, 0, cv::INTER_NEAREST);
   cv::imshow(_title, map_resized);
-}
-
-cv::Mat &filterLaserMap(cv::Mat &mat) {
-  // show_image_resized("local_laser_map", mat);
-  // generate zeros matrix
-  // ROS_INFO_ONCE("Generating zeros matrix");
-  static cv::Mat prev_mat = cv::Mat::zeros(mat.size(), mat.type());
-  static cv::Mat out = cv::Mat::zeros(mat.size(), mat.type());
-
-  const int maximum_value = 255;
-  const float value_to_set = 0.6;
-  const float increment_per_obstacle = 0.05;
-  const float decrement_per_free = 0.1;
-  const float threshold = value_to_set * maximum_value;
-
-  // filter a mask with a threshold
-  cv::Mat free_space_mask, obstacle_mask;
-  cv::threshold(mat, free_space_mask, 0.5 * maximum_value, 1,
-                cv::THRESH_BINARY_INV);
-  cv::threshold(mat, obstacle_mask, 0.5 * maximum_value, 1, cv::THRESH_BINARY);
-
-  ROS_INFO_ONCE("Filtering occupancy map");
-
-  cv::Mat prev_mat_free_space;
-  cv::threshold(prev_mat, prev_mat_free_space, value_to_set * maximum_value, 1,
-                cv::THRESH_BINARY_INV);
-  cv::Mat combined_mask = cv::Mat::zeros(mat.size(), mat.type());
-  cv::multiply(prev_mat_free_space, free_space_mask, combined_mask);
-  cv::multiply(combined_mask, cv::Scalar(decrement_per_free * maximum_value),
-               combined_mask);
-  cv::subtract(prev_mat, combined_mask, prev_mat);
-
-  cv::multiply(obstacle_mask,
-               cv::Scalar(increment_per_obstacle * maximum_value),
-               obstacle_mask);
-  cv::add(prev_mat, obstacle_mask, prev_mat);
-
-  prev_mat = cv::max(prev_mat, 0.0f);
-  prev_mat = cv::min(prev_mat, maximum_value);
-
-  // show_image_resized("prev_mat", prev_mat);
-  // cv::waitKey(20);
-
-  out = prev_mat.clone();
-  cv::threshold(out, out, threshold, maximum_value, cv::THRESH_BINARY);
-  return out;
 }
 
 void PathPlanner::occupancyImageCallback(const sensor_msgs::Image &_msg) {
@@ -539,7 +387,6 @@ void PathPlanner::occupancyImageCallback(const sensor_msgs::Image &_msg) {
     return;
   }
   occupancy_map_ = cv_ptr->image;
-  showMap(occupancy_map_, "Projected map", true);
 }
 
 void PathPlanner::positionCallback(const geometry_msgs::PoseStamped &_msg) {

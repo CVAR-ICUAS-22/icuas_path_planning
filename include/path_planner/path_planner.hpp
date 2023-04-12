@@ -64,7 +64,6 @@ public:
 
   tf::TransformListener tf_listener_;
 
-  laser_geometry::LaserProjection laser_projector_;
   AStarPlanner planner_algorithm_;
 
   void occupancyImageCallback(const sensor_msgs::Image &_msg);
@@ -75,7 +74,6 @@ public:
                   path_planner::setGoalPoint::Response &_response);
   void setGoalCallback(const geometry_msgs::PoseStamped &_msg);
 
-  bool laser_update_ = false;
   bool new_occupancy_map_ = false;
   bool generate_path_ = false;
   bool run_node_ = false;
