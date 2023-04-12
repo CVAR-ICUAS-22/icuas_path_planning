@@ -2,7 +2,6 @@
 #define PATH_PLANNER_HPP_
 
 #include <cv_bridge/cv_bridge.h>
-#include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <image_transport/image_transport.h>
 #include <laser_geometry/laser_geometry.h>
@@ -28,7 +27,7 @@
 #define OCCUPANCY_IMAGE_TOPIC "/occupancy_image"
 #define PROJECTED_MAP_TOPIC "/projected_map"
 #define LASERSCAN_TOPIC "scan"
-#define DRONEPOSITION_TOPIC "position"
+#define DRONEPOSITION_TOPIC "pose"
 #define WAYPOINT_TOPIC "position_hold/trajectory"
 #define SPEEDCONTROL_TOPIC "motion_reference/speed"
 #define POSE_TOPIC "motion_reference/pose"
@@ -70,7 +69,7 @@ public:
 
   void occupancyImageCallback(const sensor_msgs::Image &_msg);
   void laserscanCallback(const sensor_msgs::LaserScan &_msg);
-  void positionCallback(const geometry_msgs::PointStamped &_msg);
+  void positionCallback(const geometry_msgs::PoseStamped &_msg);
   bool controlNodeSrv(std_srvs::SetBool::Request &_request,
                       std_srvs::SetBool::Response &_response);
   bool setGoalSrv(path_planner::setGoalPoint::Request &_request,
