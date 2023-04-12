@@ -392,6 +392,8 @@ void PathPlanner::occupancyImageCallback(const sensor_msgs::Image &_msg) {
 void PathPlanner::positionCallback(const geometry_msgs::PoseStamped &_msg) {
   drone_position_.x = _msg.pose.position.x;
   drone_position_.y = _msg.pose.position.y;
+  drone_position_.x = 0.0;
+  drone_position_.y = 0.0;
 
   drone_yaw_ = tf::getYaw(_msg.pose.orientation);
 
