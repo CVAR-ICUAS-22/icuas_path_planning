@@ -132,18 +132,18 @@ void PathPlanner::run() {
   sendMap(path_map);
   showMap(path_map, "RUN MAP", false);
 
-  if (generate_path_ || force_generation_) {
-    generate_path_ = false;
-    generateNewPath();
-    optimizePath();
-    send_waypoint = true;
-  }
-
   if (no_solution_) {
     static cv::Point2f hover_position = drone_position_;
     ROS_WARN_ONCE("Solution not found");
     sendWaypoint(hover_position, 0.0);
     return;
+  }
+
+  if (generate_path_ || force_generation_) {
+    generate_path_ = false;
+    generateNewPath();
+    optimizePath();
+    send_waypoint = true;
   }
 
   if (!run_node_) {
@@ -678,6 +678,8 @@ void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
 void PathPlanner::positionCallback(const geometry_msgs::PoseStamped &_msg) {
   drone_position_.x = _msg.pose.position.x;
   drone_position_.y = _msg.pose.position.y;
+  ROS_INFO("drone position: %f %f", drone_position_.x, drone_position_.y);
+
   drone_yaw_ = tf::getYaw(_msg.pose.orientation);
 
   drone_cell_ =
