@@ -6,9 +6,6 @@ PathPlanner::PathPlanner() : it_(nh_) {
   occupancy_image_sub_ = nh_.subscribe(
       OCCUPANCY_IMAGE_TOPIC, 1, &PathPlanner::occupancyImageCallback, this);
 
-  // laserscan_sub_ =
-  //     nh_.subscribe(LASERSCAN_TOPIC, 1, &PathPlanner::laserscanCallback,
-  //     this);
   droneposition_sub_ = nh_.subscribe(DRONEPOSITION_TOPIC, 1,
                                      &PathPlanner::positionCallback, this);
 
@@ -65,7 +62,6 @@ PathPlanner::PathPlanner() : it_(nh_) {
   img_h_ = map_h * img_resolution_;
   img_w_ = map_w * img_resolution_;
   occ_grid_size_ = occ_map_grid_size * img_resolution_;
-  laser_map_ = cv::Mat(img_h_, img_w_, CV_8UC1, cv::Scalar(0));
   grid_size_.width = int((map_w / occ_map_grid_size));
   grid_size_.height = int((map_h / occ_map_grid_size));
   occupancy_map_ =
@@ -240,7 +236,6 @@ void PathPlanner::run() {
     // }
   }
 
-  // showMap(laser_map_, "ICUAS laser map", true);
   // showMap(occupancy_map_, "ICUAS occupancy map", false);
   // showMap(path_map, "ICUAS path map", false);
 
@@ -264,94 +259,6 @@ void PathPlanner::sendWaypoint(const cv::Point2f _next_point,
           drone_position_, _next_point, max_control_speed_));
     }
   }
-}
-
-void PathPlanner::generateOccupancyMap() {
-  static cv::Mat last_occ_map_sent(grid_size_, CV_8UC1);
-  // Convert _img into a binary image  thresholding it and compute the distance
-  // map (in meters)
-  cv::Mat binary_map, distance_map, dist_normalized_map;
-
-  // Generate Distance Map
-  cv::threshold(laser_map_, binary_map, LASER2BIN_TH, 255,
-                cv::THRESH_BINARY_INV);
-  cv::distanceTransform(binary_map, distance_map, cv::DIST_L2, 3);
-  dist_normalized_map =
-      distance_map /
-      max_distance_th_; // normalize distance map respect to the max dist
-  dist_normalized_map.setTo(1.0f,
-                            dist_normalized_map > 1.0f); // clip image to 1.0
-
-  // Generate Occupancy Map (option 1)
-  // cv::Mat binary_occupancy_map;
-  // cv::resize(dist_normalized_map, binary_occupancy_map, grid_size_,
-  // cv::INTER_MAX); occupancy_map_.setTo(255, binary_occupancy_map > 0.9);
-  // occupancy_map_.setTo(0, binary_occupancy_map <= 0.9);
-
-  // Generate Occupancy Map (option 2)
-  // cv::Mat binary_distance_map, binary_occupancy_map;
-  // cv::threshold(dist_normalized_map, binary_distance_map, 0.5, 1,
-  // cv::THRESH_BINARY); cv::resize(binary_distance_map, binary_occupancy_map,
-  // grid_size_, cv::INTER_MAX); occupancy_map_.setTo(255, binary_occupancy_map
-  // > 0.9); occupancy_map_.setTo(0, binary_occupancy_map <= 0.9);
-
-  // TODO: Generate Occupancy Map (option 3): MAKE CONVOLUTION TO SOLVE THIS AND
-  // EVERYBODY WILL BE HAPPY
-  cv::Mat binary_distance_map, binary_occupancy_map;
-  cv::threshold(dist_normalized_map, binary_distance_map, DIST2BIN_TH, 1,
-                cv::THRESH_BINARY);
-
-  // cv::imshow("dist_normalized_map", dist_normalized_map);
-  // cv::imshow("binary_distance_map", binary_distance_map);
-
-  for (int i = 0; i < grid_size_.height; i++) {
-    for (int j = 0; j < grid_size_.width; j++) {
-      // int current_value = occupancy_map_.at<uchar>(i, j);
-      // if (current_value > 1)  // Just for no occuped cells
-      // {
-      int h_step = int(img_h_ / grid_size_.height);
-      int w_step = int(img_w_ / grid_size_.width);
-      cv::Mat submatrix =
-          binary_distance_map(cv::Range(h_step * i, h_step * (i + 1)),
-                              cv::Range(w_step * j, w_step * (j + 1)));
-
-      double min_value, max_value;
-      cv::minMaxLoc(submatrix, &min_value, &max_value);
-      // count the number of zero pixels
-      int count = cv::countNonZero(submatrix);
-      int zeros = submatrix.cols * submatrix.rows - count;
-      float rate = float(zeros) / (submatrix.cols * submatrix.rows);
-
-      // if (min_value < 1) {
-      if (rate > 0.3) {
-        occupancy_map_.at<uchar>(i, j) = 0;
-        new_occupancy_map_ = true;
-      }
-      // }
-    }
-  }
-
-  // // Check occupancy map changes
-  // cv::Mat diff;
-  // cv::absdiff(occupancy_map_, last_occ_map_sent, diff);
-  // if (cv::countNonZero(diff) > 0)
-  // {
-  //   ROS_INFO("New occupancy map available");
-  // }
-  // showMap(laser_map_, "laser_map_", false);
-  // showMap(binary_map, "binary_map", false);
-  // showMap(distance_map, "distance_map", false);
-  // showMap(dist_normalized_map, "dist_normalized_map", false);
-  // showMap(binary_distance_map, "binary_distance_map", false);
-  // showMap(occupancy_map_, "occupancy_map_", false);
-
-  // std::vector<cv::Mat> maps{laser_map_, binary_map, distance_map,
-  // dist_normalized_map, binary_distance_map, occupancy_map_};
-  // showCombinedMap(maps, "combined_map");
-
-  // cv::Point2i img_drone_position;
-  // img_drone_position = coord2img(drone_position_.x, drone_position_.y,
-  // img_h_, img_w_);
 }
 
 void showCombinedMap(std::vector<cv::Mat> maps, std::string window_name) {
@@ -631,54 +538,13 @@ void PathPlanner::occupancyImageCallback(const sensor_msgs::Image &_msg) {
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
   }
-  cv::Mat occupancy_map = cv_ptr->image;
-  showMap(occupancy_map, "Projected map", true);
-}
-
-void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
-  // auto laser_filtered = filterLaserScan(_msg);
-  auto &laser_filtered = _msg;
-
-  // test publishing the filtered laser scan
-  static ros::Publisher filtered_laser_scan_pub =
-      nh_.advertise<sensor_msgs::LaserScan>("/laser_scan_filtered", 1);
-  filtered_laser_scan_pub.publish(laser_filtered);
-
-  /*   Because the stamp of a sensor_msgs/LaserScan is the time of the first
-    measurement, one cannot simply wait for a transform to target_frame at this
-    stamp. Instead one also has to wait for a transform at the last measurement
-    of the scan. */
-  if (!tf_listener_.waitForTransform(
-          _msg.header.frame_id, ref_frame_,
-          _msg.header.stamp +
-              ros::Duration().fromSec(_msg.ranges.size() * _msg.time_increment),
-          ros::Duration(1.0))) {
-    return;
-  }
-
-  sensor_msgs::PointCloud point_cloud;
-  laser_projector_.transformLaserScanToPointCloud(ref_frame_, laser_filtered,
-                                                  point_cloud, tf_listener_);
-
-  static cv::Mat local_laser_map =
-      cv::Mat::zeros(laser_map_.size(), laser_map_.type());
-  cv::Point2i img_point;
-  for (auto point : point_cloud.points) {
-    if (point.z > z_min_th_) {
-      img_point = coord2img(point.x, point.y, img_h_, img_w_);
-      local_laser_map.at<uchar>(img_point.x, img_point.y) = 255;
-      laser_update_ = true;
-    }
-  }
-
-  laser_map_ = filterLaserMap(local_laser_map);
-  local_laser_map = cv::Mat::zeros(laser_map_.size(), laser_map_.type());
+  occupancy_map_ = cv_ptr->image;
+  showMap(occupancy_map_, "Projected map", true);
 }
 
 void PathPlanner::positionCallback(const geometry_msgs::PoseStamped &_msg) {
   drone_position_.x = _msg.pose.position.x;
   drone_position_.y = _msg.pose.position.y;
-  ROS_INFO("drone position: %f %f", drone_position_.x, drone_position_.y);
 
   drone_yaw_ = tf::getYaw(_msg.pose.orientation);
 

@@ -68,7 +68,6 @@ public:
   AStarPlanner planner_algorithm_;
 
   void occupancyImageCallback(const sensor_msgs::Image &_msg);
-  void laserscanCallback(const sensor_msgs::LaserScan &_msg);
   void positionCallback(const geometry_msgs::PoseStamped &_msg);
   bool controlNodeSrv(std_srvs::SetBool::Request &_request,
                       std_srvs::SetBool::Response &_response);
@@ -94,7 +93,6 @@ public:
   std::string ref_frame_;
   cv::Size grid_size_;
 
-  cv::Mat laser_map_;
   cv::Mat occupancy_map_;
 
   std::vector<float> laser_mesuraments_;
@@ -119,7 +117,6 @@ public:
   float max_control_speed_;
   // End of SPEED_CONTROLLER
 
-  void generateOccupancyMap();
   void checkCurrentPath();
   void generateNewPath();
   void optimizePath();
