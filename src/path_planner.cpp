@@ -675,7 +675,7 @@ void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
   local_laser_map = cv::Mat::zeros(laser_map_.size(), laser_map_.type());
 }
 
-void PathPlanner::positionCallback(const geometry_msgs::PoseStamped &_msg) {
+void PathPlanner::positionCallback(const geometry_msgs::PointStamped &_msg) {
   drone_position_.x = _msg.point.x;
   drone_position_.y = _msg.point.y;
   ROS_INFO("drone position: %f %f", drone_position_.x, drone_position_.y);
