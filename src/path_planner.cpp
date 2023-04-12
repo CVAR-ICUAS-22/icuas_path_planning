@@ -132,18 +132,18 @@ void PathPlanner::run() {
   sendMap(path_map);
   showMap(path_map, "RUN MAP", false);
 
-  if (no_solution_) {
-    static cv::Point2f hover_position = drone_position_;
-    ROS_WARN_ONCE("Solution not found");
-    sendWaypoint(hover_position, 0.0);
-    return;
-  }
-
   if (generate_path_ || force_generation_) {
     generate_path_ = false;
     generateNewPath();
     optimizePath();
     send_waypoint = true;
+  }
+
+  if (no_solution_) {
+    static cv::Point2f hover_position = drone_position_;
+    ROS_WARN_ONCE("Solution not found");
+    sendWaypoint(hover_position, 0.0);
+    return;
   }
 
   if (!run_node_) {
