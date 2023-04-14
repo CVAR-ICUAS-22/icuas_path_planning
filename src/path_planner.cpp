@@ -534,10 +534,10 @@ cv::Point2i PathPlanner::coord2img(const float _x, const float _y,
   // saturate with _img_h and _img_w
 
   img_point.x = std::max(img_point.x, 0);
-  img_point.x = std::min(img_point.x, _img_h - 1);
+  img_point.x = std::min(img_point.x, _img_w - 1);
 
   img_point.y = std::max(img_point.y, 0);
-  img_point.y = std::min(img_point.y, _img_w - 1);
+  img_point.y = std::min(img_point.y, _img_h - 1);
 
   return img_point;
 }
