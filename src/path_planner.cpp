@@ -362,7 +362,19 @@ void PathPlanner::occupancyImageCallback(const sensor_msgs::Image &_msg) {
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
   }
-  occupancy_map_ = cv_ptr->image;
+  cv::Mat occ_map, binary_map, distance_map, dist_normalized_map;
+  occ_map = cv_ptr->image;
+
+  // Generate Distance Map
+  cv::threshold(occ_map, binary_map, OCC2BIN_TH, 255, cv::THRESH_BINARY); // ensuring binary map
+  cv::distanceTransform(binary_map, distance_map, cv::DIST_L2, 3);
+  dist_normalized_map =
+      distance_map / max_distance_th_;                         // normalize distance map respect to the max dist
+  dist_normalized_map.setTo(1.0f, dist_normalized_map > 1.0f); // clip image to 1.0
+
+  cv::Mat binary_distance_map, binary_occupancy_map;
+  cv::threshold(dist_normalized_map, binary_distance_map, DIST2BIN_TH, 1, cv::THRESH_BINARY);
+  occupancy_map_ = binary_distance_map;
 }
 
 void PathPlanner::positionCallback(const geometry_msgs::PoseStamped &_msg) {

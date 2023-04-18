@@ -36,7 +36,7 @@
 #define SETGOAL_SRV "path_planning/set_goal"
 #define SETGOAL_TOPIC "path_planning/set_goal"
 
-#define LASER2BIN_TH 100 // 100 // [0-255]
+#define OCC2BIN_TH 100 // 100 // [0-255]
 #define DIST2BIN_TH 0.7  // [0.0-1.0]
 
 class PathPlanner {
