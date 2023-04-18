@@ -61,8 +61,8 @@ PathPlanner::PathPlanner() : it_(nh_) {
   // ref_frame_ = REF_FRAME;
   img_h_ = map_h * img_resolution_;
   img_w_ = map_w * img_resolution_;
-  ROS_INFO("img_h: %.2f", img_h_);
-  ROS_INFO("img_w: %.2f", img_w_);
+  ROS_INFO("img_h: %d", img_h_);
+  ROS_INFO("img_w: %d", img_w_);
   occ_grid_size_ = occ_map_grid_size * img_resolution_;
   grid_size_.width = int((map_w / occ_map_grid_size));
   grid_size_.height = int((map_h / occ_map_grid_size));
