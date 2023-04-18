@@ -552,6 +552,8 @@ cv::Point2i PathPlanner::coord2grid(const float _x, const float _y,
       int((img_drone_position.x / occ_grid_size_)); // x
   grid_drone_position.y =
       int((img_drone_position.y / occ_grid_size_)); // y
+  
+  grid2coord(grid_drone_position, _img_h, _img_w);
   return grid_drone_position;
 }
 
@@ -559,27 +561,8 @@ cv::Point2f PathPlanner::grid2coord(const cv::Point2i &_point, const int _img_h,
                                     const int _img_w) {
   cv::Point2f coord_point;
 
-  // ROS_INFO("Point: %d, %d", _point.x, _point.y);
-  // ROS_INFO("Img h: %d, w: %d", _img_h / 2, _img_w / 2);
-  // ROS_INFO("%d, %d", _point.x * OCC_GRID_SIZE, _point.y * OCC_GRID_SIZE);
-  coord_point.x =
-      (((double)_img_h / 2.0) - (_point.x * occ_grid_size_)) / img_resolution_;
-  coord_point.y =
-      (((double)_img_w / 2.0) - (_point.y * occ_grid_size_)) / img_resolution_;
-  // ROS_INFO("First x: %f, y: %f", coord_point.x, coord_point.y);
-  coord_point.x -= (occ_grid_size_ / 2) / img_resolution_;
-  coord_point.y -= (occ_grid_size_ / 2) / img_resolution_;
-  // ROS_INFO("Second x: %f, y: %f", coord_point.x, coord_point.y);
-
-  // saturate the coordinates
-  // coord_point.x = std::max((double)coord_point.x,(double) _img_h / 2.0);
-  // coord_point.x = std::min((double)coord_point.x,(double) -_img_h / 2.0);
-  // coord_point.y = std::max((double)coord_point.y,(double) _img_w / 2.0);
-  // coord_point.y = std::min((double)coord_point.y,(double) -_img_w / 2.0);
-
-  // coord_point.x = (int) coord_point.x;
-  // coord_point.y = (int) coord_point.y;
-
+  coord_point.x = (_point.y * occ_grid_size_) / img_resolution_;
+  coord_point.y = (img_h_ - _point.x * occ_grid_size_) / img_resolution_;
   return coord_point;
 }
 
