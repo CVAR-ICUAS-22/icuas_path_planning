@@ -399,10 +399,6 @@ void PathPlanner::positionCallback(const geometry_msgs::PoseStamped &_msg) {
 
   drone_cell_ =
       coord2grid(drone_position_.x, drone_position_.y, img_h_, img_w_);
-  cv::Point2i drone_position;
-  drone_position.x = 20;
-  drone_position.y = 0;
-  drone_cell_ = drone_position;
 }
 
 bool PathPlanner::controlNodeSrv(std_srvs::SetBool::Request &_request,
@@ -530,40 +526,32 @@ cv::Mat generatePathImg(const cv::Mat &_map, const cv::Point2i &_drone_px,
 cv::Point2i PathPlanner::coord2img(const float _x, const float _y,
                                    const int _img_h, const int _img_w) {
   cv::Point2i img_point;
-  // float w = _img_w / 2;
-  // float h = _img_h / 2;
   float x = _x * img_resolution_;
   float y = _y * img_resolution_;
-  img_point.x = int(x);
-  img_point.y = int(y);
+
+  // swaping x and y
+  img_point.x = int(_img_h - y);
+  img_point.y = int(x);
 
   // saturate with _img_h and _img_w
-
   img_point.x = std::max(img_point.x, 0);
-  img_point.x = std::min(img_point.x, _img_w - 1);
+  img_point.x = std::min(img_point.x, _img_h - 1);
 
   img_point.y = std::max(img_point.y, 0);
-  img_point.y = std::min(img_point.y, _img_h - 1);
+  img_point.y = std::min(img_point.y, _img_w - 1);
 
   return img_point;
 }
 
 cv::Point2i PathPlanner::coord2grid(const float _x, const float _y,
                                     const int _img_h, const int _img_w) {
-  ROS_INFO("Image size: %d %d", _img_w, _img_h);
-
-  ROS_INFO("Real pose: %f %f", _x, _y);
-
   cv::Point2i img_drone_position, grid_drone_position;
   img_drone_position = coord2img(_x, _y, _img_h, _img_w);
-  ROS_INFO("Image pose: %d %d", img_drone_position.x, img_drone_position.y);
 
   grid_drone_position.x =
-      int((img_drone_position.x / (occ_grid_size_ / img_resolution_))); // x
+      int((img_drone_position.x / occ_grid_size_)); // x
   grid_drone_position.y =
-      int((img_drone_position.y / (occ_grid_size_ / img_resolution_))); // y
-  ROS_INFO("Grid pose: %d %d", grid_drone_position.x, grid_drone_position.y);
-
+      int((img_drone_position.y / occ_grid_size_)); // y
   return grid_drone_position;
 }
 
