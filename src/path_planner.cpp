@@ -544,6 +544,8 @@ cv::Point2i PathPlanner::coord2img(const float _x, const float _y,
 
 cv::Point2i PathPlanner::coord2grid(const float _x, const float _y,
                                     const int _img_h, const int _img_w) {
+  ROS_INFO("Image size: %f %f", _img_w, _img_h);
+
   ROS_INFO("Real pose: %f %f", _x, _y);
 
   cv::Point2i img_drone_position, grid_drone_position;
