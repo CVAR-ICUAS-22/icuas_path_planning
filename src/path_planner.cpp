@@ -540,7 +540,7 @@ cv::Point2i PathPlanner::coord2img(const float _x, const float _y,
   img_point.y = std::max(img_point.y, 0);
   img_point.y = std::min(img_point.y, _img_w - 1);
 
-  return img_point;
+  return img_point; // in pixel
 }
 
 cv::Point2i PathPlanner::coord2grid(const float _x, const float _y,
@@ -554,7 +554,7 @@ cv::Point2i PathPlanner::coord2grid(const float _x, const float _y,
       int((img_drone_position.y / occ_grid_size_)); // y
   
   grid2coord(grid_drone_position, _img_h, _img_w);
-  return grid_drone_position;
+  return grid_drone_position; // unitless ¿?
 }
 
 cv::Point2f PathPlanner::grid2coord(const cv::Point2i &_point, const int _img_h,
@@ -563,7 +563,7 @@ cv::Point2f PathPlanner::grid2coord(const cv::Point2i &_point, const int _img_h,
 
   coord_point.x = (_point.y * occ_grid_size_) / img_resolution_;
   coord_point.y = (img_h_ - _point.x * occ_grid_size_) / img_resolution_;
-  return coord_point;
+  return coord_point; // in meters
 }
 
 trajectory_msgs::MultiDOFJointTrajectoryPoint
