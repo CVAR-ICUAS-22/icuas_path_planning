@@ -401,8 +401,8 @@ void PathPlanner::positionCallback(const geometry_msgs::PoseStamped &_msg) {
       coord2grid(drone_position_.x, drone_position_.y, img_h_, img_w_);
   cv::Point2i drone_position;
   drone_position.x = 50;
-  drone.position.y = 200;
-  drone_cell_ = drone_position
+  drone_position.y = 200;
+  drone_cell_ = drone_position;
 }
 
 bool PathPlanner::controlNodeSrv(std_srvs::SetBool::Request &_request,
