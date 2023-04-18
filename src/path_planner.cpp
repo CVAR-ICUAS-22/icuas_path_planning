@@ -528,8 +528,8 @@ cv::Point2i PathPlanner::coord2img(const float _x, const float _y,
   cv::Point2i img_point;
   // float w = _img_w / 2;
   // float h = _img_h / 2;
-  float x = _x * img_resolution_ * 2;
-  float y = _y * img_resolution_ * 2;
+  float x = _x * img_resolution_;
+  float y = _y * img_resolution_;
   img_point.x = int(x);
   img_point.y = int(y);
 
@@ -554,8 +554,10 @@ cv::Point2i PathPlanner::coord2grid(const float _x, const float _y,
   img_drone_position = coord2img(_x, _y, _img_h, _img_w);
   ROS_INFO("Image pose: %d %d", img_drone_position.x, img_drone_position.y);
 
-  grid_drone_position.x = int((img_drone_position.x / occ_grid_size_)); // x
-  grid_drone_position.y = int((img_drone_position.y / occ_grid_size_)); // y
+  grid_drone_position.x =
+      int((img_drone_position.x / (occ_grid_size_ / img_resolution_))); // x
+  grid_drone_position.y =
+      int((img_drone_position.y / (occ_grid_size_ / img_resolution_))); // y
   ROS_INFO("Grid pose: %d %d", grid_drone_position.x, grid_drone_position.y);
 
   return grid_drone_position;
