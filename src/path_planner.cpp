@@ -400,8 +400,8 @@ void PathPlanner::positionCallback(const geometry_msgs::PoseStamped &_msg) {
   drone_cell_ =
       coord2grid(drone_position_.x, drone_position_.y, img_h_, img_w_);
   cv::Point2i drone_position;
-  drone_position.x = 50;
-  drone_position.y = 200;
+  drone_position.x = 20;
+  drone_position.y = 300;
   drone_cell_ = drone_position;
 }
 
