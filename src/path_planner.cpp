@@ -16,10 +16,10 @@ PathPlanner::PathPlanner() : it_(nh_) {
   image_publisher_ = it_.advertise(IMAGE_PUB_TOPIC, 1);
   control_node_srv =
       nh_.advertiseService(CONTROLNODE_SRV, &PathPlanner::controlNodeSrv, this);
-  // set_goal_srv = nh_.advertiseService(SETGOAL_SRV, &PathPlanner::setGoalSrv,
-  // this);
-  set_goal_sub_ =
-      nh_.subscribe(SETGOAL_TOPIC, 1, &PathPlanner::setGoalCallback, this);
+  set_goal_srv = nh_.advertiseService(SETGOAL_SRV, &PathPlanner::setGoalSrv,
+  this);
+  // set_goal_sub_ =
+  //     nh_.subscribe(SETGOAL_TOPIC, 1, &PathPlanner::setGoalCallback, this);
   float map_h;
   float map_w;
   float max_distance;
@@ -87,17 +87,9 @@ PathPlanner::~PathPlanner() {}
 
 void PathPlanner::start() {
   ROS_INFO("Node started");
-  // goal_position_ = cv::Point2f(6, 0);
-  // goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_,
-  // img_w_); ROS_WARN("Goal position set to default: %f, %f", goal_position_.x,
-  // goal_position_.y); if (goal_position_ == cv::Point2f(0, 0))
-  // {
-  //   goal_position_ = cv::Point2f(5, 0);
-  //   goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_,
-  //   img_w_); ROS_WARN("Goal position set to default: %f, %f",
-  //   goal_position_.x, goal_position_.y);
-  // }
-  force_generation_ = true;
+  run_node_ = true;
+  generate_path_ = true;
+  ending_maze_ = false;
 }
 
 void PathPlanner::stop() {
@@ -109,26 +101,15 @@ void PathPlanner::stop() {
 
 void PathPlanner::run() {
   static bool send_waypoint = false;
-  // force_generation_ = true; // DEBUG
-
-  // OLD
-  // if (laser_update_ || force_generation_) {
-  //   ROS_DEBUG("New laser measuments");
-  //   laser_update_ = false;
-  //   generateOccupancyMap();
-  // }
-
-  // if (new_occupancy_map_ || force_generation_) {
-  //   new_occupancy_map_ = false;
-  //   ROS_DEBUG("New occupancy map available");
-  //   // sendMap(occupancy_map_); // DEBUG
-  //   checkCurrentPath();
-  // }
 
   cv::Mat path_map = generatePathImg(occupancy_map_, drone_cell_, current_path_,
                                      ref_waypoints_);
   sendMap(path_map);
   showMap(path_map, "RUN MAP", false);
+
+  if (!run_node_) {
+    return;
+  }
 
   if (no_solution_) {
     static cv::Point2f hover_position = drone_position_;
@@ -137,15 +118,11 @@ void PathPlanner::run() {
     return;
   }
 
-  if (generate_path_ || force_generation_) {
+  if (generate_path_) {
     generate_path_ = false;
     generateNewPath();
     optimizePath();
     send_waypoint = true;
-  }
-
-  if (!run_node_) {
-    return;
   }
 
   if (!ending_maze_) {
@@ -240,9 +217,6 @@ void PathPlanner::run() {
 
   // showMap(occupancy_map_, "ICUAS occupancy map", false);
   // showMap(path_map, "ICUAS path map", false);
-
-  if (force_generation_)
-    force_generation_ = false;
 }
 
 void PathPlanner::sendWaypoint(const cv::Point2f _next_point,
@@ -425,20 +399,27 @@ bool PathPlanner::controlNodeSrv(std_srvs::SetBool::Request &_request,
 
 bool PathPlanner::setGoalSrv(path_planner::setGoalPoint::Request &_request,
                              path_planner::setGoalPoint::Response &_response) {
+  if (run_node_) {
+    _response.success = false;
+    _response.message = "Node already performing path planning";
+    ROS_WARN("Node already performing path planning");
+    return false;
+  }
+
   goal_position_.x = _request.goal.point.x;
   goal_position_.y = _request.goal.point.y;
 
   ROS_INFO("Goal position: %f, %f", goal_position_.x, goal_position_.y);
-
+ 
   _response.success = true;
   _response.message =
       "Goal position set to: " + std::to_string(goal_position_.x) + ", " +
       std::to_string(goal_position_.y);
 
   goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
-
+  
   goal_set_ = true;
-  // force_generation_ = true;
+  start();
 
   return true;
 }
@@ -458,7 +439,6 @@ void PathPlanner::setGoalCallback(const geometry_msgs::PoseStamped &_msg) {
   goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
 
   goal_set_ = true;
-  // force_generation_ = true;
 }
 
 // PUBLISH
