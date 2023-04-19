@@ -38,7 +38,6 @@ generate_messages(DEPENDENCIES geometry_msgs)
 
 catkin_package(
   INCLUDE_DIRS include include/${PROJECT_NAME}
-  LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS ${PROJECT_DEPENDENCIES}
 )
 
