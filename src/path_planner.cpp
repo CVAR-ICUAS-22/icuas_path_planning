@@ -16,8 +16,8 @@ PathPlanner::PathPlanner() : it_(nh_) {
   image_publisher_ = it_.advertise(IMAGE_PUB_TOPIC, 1);
   control_node_srv =
       nh_.advertiseService(CONTROLNODE_SRV, &PathPlanner::controlNodeSrv, this);
-  set_goal_srv = nh_.advertiseService(SETGOAL_SRV, &PathPlanner::setGoalSrv,
-  this);
+  set_goal_srv =
+      nh_.advertiseService(SETGOAL_SRV, &PathPlanner::setGoalSrv, this);
   // set_goal_sub_ =
   //     nh_.subscribe(SETGOAL_TOPIC, 1, &PathPlanner::setGoalCallback, this);
   float map_h;
@@ -362,18 +362,27 @@ void PathPlanner::occupancyImageCallback(const sensor_msgs::Image &_msg) {
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
   }
+
+  if (max_distance_th_ == 0.0) {
+    occupancy_map_ = cv_ptr->image;
+    return;
+  }
+
   cv::Mat occ_map, binary_map, distance_map, dist_normalized_map;
   occ_map = cv_ptr->image;
-
   // Generate Distance Map
-  cv::threshold(occ_map, binary_map, OCC2BIN_TH, 255, cv::THRESH_BINARY); // ensuring binary map
+  cv::threshold(occ_map, binary_map, OCC2BIN_TH, 255,
+                cv::THRESH_BINARY); // ensuring binary map
   cv::distanceTransform(binary_map, distance_map, cv::DIST_L2, 3);
   dist_normalized_map =
-      distance_map / max_distance_th_;                         // normalize distance map respect to the max dist
-  dist_normalized_map.setTo(1.0f, dist_normalized_map > 1.0f); // clip image to 1.0
+      distance_map /
+      max_distance_th_; // normalize distance map respect to the max dist
+  dist_normalized_map.setTo(1.0f,
+                            dist_normalized_map > 1.0f); // clip image to 1.0
 
   cv::Mat binary_distance_map, binary_occupancy_map;
-  cv::threshold(dist_normalized_map, binary_distance_map, DIST2BIN_TH, 1, cv::THRESH_BINARY);
+  cv::threshold(dist_normalized_map, binary_distance_map, DIST2BIN_TH, 1,
+                cv::THRESH_BINARY);
   occupancy_map_ = binary_distance_map;
 }
 
@@ -422,14 +431,14 @@ bool PathPlanner::setGoalSrv(path_planner::setGoalPoint::Request &_request,
   goal_position_.y = _request.goal.point.y;
 
   ROS_INFO("Goal position: %f, %f", goal_position_.x, goal_position_.y);
- 
+
   _response.success = true;
   _response.message =
       "Goal position set to: " + std::to_string(goal_position_.x) + ", " +
       std::to_string(goal_position_.y);
 
   goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
-  
+
   goal_set_ = true;
   start();
 
@@ -540,11 +549,9 @@ cv::Point2i PathPlanner::coord2grid(const float _x, const float _y,
   cv::Point2i img_drone_position, grid_drone_position;
   img_drone_position = coord2img(_x, _y, _img_h, _img_w);
 
-  grid_drone_position.x =
-      int((img_drone_position.x / occ_grid_size_)); // x
-  grid_drone_position.y =
-      int((img_drone_position.y / occ_grid_size_)); // y
-  
+  grid_drone_position.x = int((img_drone_position.x / occ_grid_size_)); // x
+  grid_drone_position.y = int((img_drone_position.y / occ_grid_size_)); // y
+
   grid2coord(grid_drone_position, _img_h, _img_w);
   return grid_drone_position; // unitless ¿?
 }
