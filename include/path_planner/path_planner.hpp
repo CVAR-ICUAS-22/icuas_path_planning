@@ -77,7 +77,7 @@ public:
   bool new_occupancy_map_ = false;
   bool generate_path_ = false;
   bool run_node_ = false;
-  bool check_future_point_ = false;
+  bool check_future_point_ = true;
   bool no_solution_ = false;
 
   int img_h_;

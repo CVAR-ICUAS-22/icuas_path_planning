@@ -113,6 +113,7 @@ void PathPlanner::run() {
     static cv::Point2f hover_position = drone_position_;
     ROS_WARN_ONCE("Solution not found");
     sendWaypoint(hover_position, 0.0);
+    run_node_=false;
     return;
   }
 
@@ -327,30 +328,33 @@ void PathPlanner::occupancyImageCallback(const sensor_msgs::Image &_msg) {
     return;
   }
 
-  if (max_distance_th_ == 0.0) {
-    occupancy_map_ = cv_ptr->image;
-    return;
-  }
+  occupancy_map_ = cv_ptr->image;
+  return;
 
-  cv::Mat occ_map, binary_map, distance_map, dist_normalized_map;
-  occ_map = cv_ptr->image;
-  // Generate Distance Map
-  cv::threshold(occ_map, binary_map, OCC2BIN_TH, 255,
-                cv::THRESH_BINARY); // ensuring binary map
-  showMap(binary_map, "binary_map", false);
-  cv::distanceTransform(binary_map, distance_map, cv::DIST_L2, 3);
-  showMap(distance_map, "distance_map", false);
-  dist_normalized_map =
-      distance_map /
-      (max_distance_th_ / occ_grid_size_) ; // normalize distance map respect to the max dist
-  dist_normalized_map.setTo(1.0f,
-                            dist_normalized_map > 1.0f); // clip image to 1.0
+  // if (max_distance_th_ == 0.0) {
+  //   occupancy_map_ = cv_ptr->image;
+  //   return;
+  // }
 
-  showMap(dist_normalized_map, "dist_normalized_map", false);
-  cv::Mat binary_distance_map, binary_occupancy_map;
-  cv::threshold(dist_normalized_map, binary_distance_map, DIST2BIN_TH, 1,
-                cv::THRESH_BINARY);
-  occupancy_map_ = binary_distance_map;
+  // cv::Mat occ_map, binary_map, distance_map, dist_normalized_map;
+  // occ_map = cv_ptr->image;
+  // // Generate Distance Map
+  // cv::threshold(occ_map, binary_map, OCC2BIN_TH, 255,
+  //               cv::THRESH_BINARY); // ensuring binary map
+  // showMap(binary_map, "binary_map", false);
+  // cv::distanceTransform(binary_map, distance_map, cv::DIST_L2, 3);
+  // showMap(distance_map, "distance_map", false);
+  // dist_normalized_map =
+  //     distance_map /
+  //     (max_distance_th_ / occ_grid_size_) ; // normalize distance map respect to the max dist
+  // dist_normalized_map.setTo(1.0f,
+  //                           dist_normalized_map > 1.0f); // clip image to 1.0
+
+  // showMap(dist_normalized_map, "dist_normalized_map", false);
+  // cv::Mat binary_distance_map, binary_occupancy_map;
+  // cv::threshold(dist_normalized_map, binary_distance_map, DIST2BIN_TH, 1,
+  //               cv::THRESH_BINARY);
+  // occupancy_map_ = binary_distance_map;
 }
 
 void PathPlanner::positionCallback(const geometry_msgs::PoseStamped &_msg) {
