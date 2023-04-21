@@ -77,9 +77,7 @@ public:
   bool new_occupancy_map_ = false;
   bool generate_path_ = false;
   bool run_node_ = false;
-  bool goal_set_ = false;
   bool check_future_point_ = false;
-  bool ending_maze_ = false;
   bool no_solution_ = false;
 
   int img_h_;
@@ -103,6 +101,7 @@ public:
   float max_distance_th_;
   float next_point_reached_dist_;
   float x_safe_zone_;
+  float reached_dist_ = 0.5;
 
   cv::Point2i drone_cell_;
   cv::Point2i goal_cell_;

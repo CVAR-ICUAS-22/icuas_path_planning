@@ -89,12 +89,10 @@ void PathPlanner::start() {
   ROS_INFO("Node started");
   run_node_ = true;
   generate_path_ = true;
-  ending_maze_ = false;
 }
 
 void PathPlanner::stop() {
   ROS_INFO("Node stopped");
-  goal_set_ = false;
   goal_position_ = cv::Point2f(0, 0);
   goal_cell_ = cv::Point2i(0, 0);
 }
@@ -125,12 +123,17 @@ void PathPlanner::run() {
     send_waypoint = true;
   }
 
-  if (!ending_maze_) {
-    if (drone_position_.x > x_safe_zone_) {
-      ending_maze_ = true;
-      ROS_WARN("Ending maze");
+  // Check if the goal has been reached
+  // if (run_node_) {
+    float distance = sqrt(pow(goal_position_.x - drone_position_.x, 2) +
+                          pow(goal_position_.y - drone_position_.y, 2));
+    if (distance < reached_dist_) {
+      ROS_INFO("Goal reached");
+      run_node_ = false;
+      return; 
     }
-  }
+  // }
+  
   // TESTING YAW
   // if (current_path_.size() > 0 & send_waypoint)
   if (ref_waypoints_.size() > 0) {
@@ -186,33 +189,6 @@ void PathPlanner::run() {
     if (send_waypoint) {
       sendWaypoint(next_point, sending_yaw);
     }
-    // float next_yaw = atan2(next_point.y - drone_position_.y, next_point.x -
-    // drone_position_.x); if (!speed_controller_) {
-    //   waypoint_pub_.publish(createTrajectoryFromPointMsg(next_point,
-    //   fly_height_, sending_yaw));
-    // }
-    // if (speed_controller_) {
-    //   if (ending_maze_) {
-    //     ROS_INFO("Sending pose %f, %f", next_point.x, next_point.y);
-    //     pose_pub_.publish(createPoseStampedMsg(next_point, fly_height_,
-    //     sending_yaw));
-    //   } else {
-    //     speed_control_pub_.publish(
-    //         createSpeedReferenceMsg(drone_position_, next_point,
-    //         max_control_speed_));
-    //   }
-    // }
-
-    // if (SPEED_CONTROLLER)
-    //   speed_control_pub_.publish(createSpeedReferenceMsg(drone_position_,
-    //   next_point, control_speed_));
-
-    // if (distance < NEXT_POINT_REACHED_DIST)
-    // {
-    //   ref_waypoints_.erase(ref_waypoints_.begin());
-    //   send_waypoint = true;
-    // }
-    // }
   }
 
   // showMap(occupancy_map_, "ICUAS occupancy map", false);
@@ -221,20 +197,8 @@ void PathPlanner::run() {
 
 void PathPlanner::sendWaypoint(const cv::Point2f _next_point,
                                const float _sending_yaw) {
-  if (!speed_controller_) {
     waypoint_pub_.publish(
         createTrajectoryFromPointMsg(_next_point, fly_height_, _sending_yaw));
-  }
-  if (speed_controller_) {
-    if (ending_maze_ || no_solution_) {
-      // ROS_INFO("Sending pose %f, %f", _next_point.x, _next_point.y);
-      pose_pub_.publish(
-          createPoseStampedMsg(_next_point, fly_height_, _sending_yaw));
-    } else {
-      speed_control_pub_.publish(createSpeedReferenceMsg(
-          drone_position_, _next_point, max_control_speed_));
-    }
-  }
 }
 
 void showCombinedMap(std::vector<cv::Mat> maps, std::string window_name) {
@@ -373,13 +337,16 @@ void PathPlanner::occupancyImageCallback(const sensor_msgs::Image &_msg) {
   // Generate Distance Map
   cv::threshold(occ_map, binary_map, OCC2BIN_TH, 255,
                 cv::THRESH_BINARY); // ensuring binary map
+  showMap(binary_map, "binary_map", false);
   cv::distanceTransform(binary_map, distance_map, cv::DIST_L2, 3);
+  showMap(distance_map, "distance_map", false);
   dist_normalized_map =
       distance_map /
-      max_distance_th_; // normalize distance map respect to the max dist
+      (max_distance_th_ / occ_grid_size_) ; // normalize distance map respect to the max dist
   dist_normalized_map.setTo(1.0f,
                             dist_normalized_map > 1.0f); // clip image to 1.0
 
+  showMap(dist_normalized_map, "dist_normalized_map", false);
   cv::Mat binary_distance_map, binary_occupancy_map;
   cv::threshold(dist_normalized_map, binary_distance_map, DIST2BIN_TH, 1,
                 cv::THRESH_BINARY);
@@ -439,7 +406,6 @@ bool PathPlanner::setGoalSrv(path_planner::setGoalPoint::Request &_request,
 
   goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
 
-  goal_set_ = true;
   start();
 
   return true;
@@ -458,8 +424,6 @@ void PathPlanner::setGoalCallback(const geometry_msgs::PoseStamped &_msg) {
   ROS_INFO("Goal position: %f, %f", goal_position_.x, goal_position_.y);
 
   goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
-
-  goal_set_ = true;
 }
 
 // PUBLISH
