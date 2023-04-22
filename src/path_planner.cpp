@@ -12,6 +12,7 @@ PathPlanner::PathPlanner() : it_(nh_) {
   waypoint_pub_ = nh_.advertise<trajectory_msgs::MultiDOFJointTrajectoryPoint>(
       WAYPOINT_TOPIC, 1);
   pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(POSE_TOPIC, 1);
+  reset_octomap_ = nh_.serviceClient<std_srvs::Empty>(RESET_OCTOMAP_SRV);
 
   image_publisher_ = it_.advertise(IMAGE_PUB_TOPIC, 1);
   control_node_srv =
@@ -261,14 +262,26 @@ void PathPlanner::checkCurrentPath() {
 }
 
 void PathPlanner::generateNewPath() {
-  ROS_DEBUG("Generating new path");
   current_path_.clear();
+  int n_attempts = 10;
 
-  planner_algorithm_.setOriginPoint(drone_cell_);
-  planner_algorithm_.setGoal(goal_cell_);
-  planner_algorithm_.setOcuppancyGrid(occupancy_map_);
+  for (int i=0; i < n_attempts; i++) {
+    ROS_INFO("Generating new path");
+    planner_algorithm_.setOriginPoint(drone_cell_);
+    planner_algorithm_.setGoal(goal_cell_);
+    planner_algorithm_.setOcuppancyGrid(occupancy_map_);
+    current_path_ = planner_algorithm_.solveGraph();
 
-  current_path_ = planner_algorithm_.solveGraph();
+    if (current_path_.size() == 0) {
+      ROS_INFO("Path not found, regenerating occupancy map");
+      // ROS_INFO("Path not found, generating occupancy map %d/%d", i, n_attempts);
+      std_srvs::Empty reset;
+      reset_octomap_.call(reset);
+      continue;
+    }
+    std::cout << "Path found" << std::endl;
+    break;
+  }
 }
 
 void PathPlanner::optimizePath() {
@@ -409,6 +422,8 @@ bool PathPlanner::setGoalSrv(path_planner::setGoalPoint::Request &_request,
     ROS_WARN("Node already performing path planning");
     return false;
   }
+  // std_srvs::Empty reset;
+  // reset_octomap_.call(reset);
 
   goal_position_.x = _request.goal.point.x;
   goal_position_.y = _request.goal.point.y;

@@ -12,6 +12,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud.h>
 #include <std_srvs/SetBool.h>
+#include <std_srvs/Empty.h>
 #include <tf/transform_listener.h>
 #include <trajectory_msgs/MultiDOFJointTrajectoryPoint.h>
 
@@ -35,6 +36,7 @@
 #define CONTROLNODE_SRV "path_planning/run"
 #define SETGOAL_SRV "path_planning/set_goal"
 #define SETGOAL_TOPIC "path_planning/set_goal"
+#define RESET_OCTOMAP_SRV "/octomap_server/reset"
 
 #define OCC2BIN_TH 100 // 100 // [0-255]
 #define DIST2BIN_TH 0.7  // [0.0-1.0]
@@ -57,6 +59,7 @@ public:
 
   ros::ServiceServer control_node_srv;
   ros::ServiceServer set_goal_srv;
+  ros::ServiceClient reset_octomap_;
   // ros::Subscriber set_goal_sub_;
 
   image_transport::ImageTransport it_;
@@ -101,7 +104,7 @@ public:
   float max_distance_th_;
   float next_point_reached_dist_;
   float x_safe_zone_;
-  float reached_dist_ = 0.5;
+  float reached_dist_ = 2.0;
 
   cv::Point2i drone_cell_;
   cv::Point2i goal_cell_;
