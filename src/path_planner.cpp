@@ -109,6 +109,15 @@ void PathPlanner::run() {
     return;
   }
 
+
+  if (new_occupancy_map_)
+  {
+    new_occupancy_map_ = false;
+    // ROS_DEBUG("New occupancy map available");
+    // sendMap(occupancy_map_); // DEBUG
+    checkCurrentPath();
+  }
+
   if (no_solution_) {
     static cv::Point2f hover_position = drone_position_;
     ROS_WARN_ONCE("Solution not found");
@@ -327,6 +336,9 @@ void PathPlanner::occupancyImageCallback(const sensor_msgs::Image &_msg) {
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
   }
+
+  new_occupancy_map_ = true;
+
 
   occupancy_map_ = cv_ptr->image;
   return;
