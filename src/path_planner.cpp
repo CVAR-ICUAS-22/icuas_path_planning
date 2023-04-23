@@ -9,9 +9,7 @@ PathPlanner::PathPlanner() : it_(nh_) {
   droneposition_sub_ = nh_.subscribe(DRONEPOSITION_TOPIC, 1,
                                      &PathPlanner::positionCallback, this);
 
-  // waypoint_pub_ = nh_.advertise<trajectory_msgs::MultiDOFJointTrajectoryPoint>(
-  //     WAYPOINT_TOPIC, 1);
-  waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(
+  waypoint_pub_ = nh_.advertise<trajectory_msgs::MultiDOFJointTrajectoryPoint>(
       WAYPOINT_TOPIC, 1);
   pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(POSE_TOPIC, 1);
   has_ended_pub_ = nh_.advertise<std_msgs::Bool>(PATHPLANNER_HAS_ENDED_TOPIC, 1);
@@ -227,18 +225,8 @@ void PathPlanner::endNavigation()
 
 void PathPlanner::sendWaypoint(const cv::Point2f _next_point,
                                const float _sending_yaw) {
-  auto trajectory_msg = createTrajectoryFromPointMsg(
-      _next_point, fly_height_, _sending_yaw);
-  geometry_msgs::PoseStamped pose_msg;
-  pose_msg.pose.position.x = trajectory_msg.transforms[0].translation.x;
-  pose_msg.pose.position.y = trajectory_msg.transforms[0].translation.y;
-  pose_msg.pose.position.z = trajectory_msg.transforms[0].translation.z;
-  pose_msg.pose.orientation = trajectory_msg.transforms[0].rotation;
-  pose_msg.header.stamp = ros::Time::now();
-  waypoint_pub_.publish(pose_msg);
-
-    // waypoint_pub_.publish(
-    //     createTrajectoryFromPointMsg(_next_point, fly_height_, _sending_yaw));
+    waypoint_pub_.publish(
+        createTrajectoryFromPointMsg(_next_point, fly_height_, _sending_yaw));
 }
 
 void showCombinedMap(std::vector<cv::Mat> maps, std::string window_name) {
