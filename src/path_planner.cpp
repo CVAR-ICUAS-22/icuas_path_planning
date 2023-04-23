@@ -136,7 +136,7 @@ void PathPlanner::run() {
   if (generate_path_) {
     generate_path_ = false;
     generateNewPath();
-    optimizePath();
+    // optimizePath();
     send_waypoint = true;
   }
 
