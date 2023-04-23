@@ -112,7 +112,7 @@ public:
   float max_distance_th_;
   float next_point_reached_dist_;
   float x_safe_zone_;
-  float reached_dist_ = 0.5;
+  float reached_dist_ = 1.0;
 
   cv::Point2i drone_cell_;
   cv::Point2i goal_cell_;
