@@ -93,6 +93,7 @@ void PathPlanner::start() {
   run_node_ = true;
   generate_path_ = true;
   goal_reached_ = false;
+  no_solution_ = false;
 }
 
 void PathPlanner::stop() {
