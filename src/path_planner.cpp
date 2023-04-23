@@ -371,8 +371,8 @@ void PathPlanner::occupancyImageCallback(const sensor_msgs::Image &_msg) {
   }
 
   new_occupancy_map_ = true;
-
   occupancy_map_ = cv_ptr->image;
+
   return;
 
 }
@@ -440,7 +440,7 @@ bool PathPlanner::setGoalSrv(path_planner::setGoalPoint::Request &_request,
 void PathPlanner::setGoalCallback(const geometry_msgs::PoseStamped &_msg) {
   float distance = sqrt(pow(_msg.pose.position.x - drone_position_.x, 2) +
                         pow(_msg.pose.position.y - drone_position_.y, 2));
-  if (distance < 5.0) {
+  if (distance < 1.0) {
     return;
   }
 
