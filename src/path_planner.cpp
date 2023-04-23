@@ -419,7 +419,7 @@ bool PathPlanner::setGoalSrv(path_planner::setGoalPoint::Request &_request,
     return false;
   }
   std_srvs::Empty reset;
-  reset_octomap_.call(reset);
+  // reset_octomap_.call(reset);
 
   goal_position_.x = _request.goal.point.x;
   goal_position_.y = _request.goal.point.y;
