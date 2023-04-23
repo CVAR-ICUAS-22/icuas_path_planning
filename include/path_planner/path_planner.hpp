@@ -33,7 +33,7 @@
 #define LASERSCAN_TOPIC "scan"
 #define DRONEPOSITION_TOPIC "pose"
 // #define WAYPOINT_TOPIC "position_hold/trajectory"
-#define WAYPOINT_TOPIC "tracker/input_trajectory"
+#define WAYPOINT_TOPIC "tracker/input_pose"
 #define SPEEDCONTROL_TOPIC "motion_reference/speed"
 #define POSE_TOPIC "motion_reference/pose"
 #define IMAGE_PUB_TOPIC "occupancy_map"
