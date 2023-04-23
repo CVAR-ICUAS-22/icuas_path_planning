@@ -55,6 +55,7 @@ PathPlanner::PathPlanner() : it_(nh_) {
   ROS_INFO("fly_height: %.2f", fly_height_);
   ROS_INFO("security distance: %.2f", max_distance);
   ROS_INFO("next_point_reached_dist: %.2f", next_point_reached_dist_);
+  next_point_reached_dist_ = reached_dist_;
   std::string controller_str = speed_controller_ ? "SPEED" : "POSITION";
   ROS_INFO("controller: %s", controller_str.c_str());
   if (speed_controller_) {
