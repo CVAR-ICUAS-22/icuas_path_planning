@@ -13,6 +13,7 @@
 #include <sensor_msgs/PointCloud.h>
 #include <std_srvs/SetBool.h>
 #include <std_srvs/Empty.h>
+#include <std_msgs/Bool.h>
 #include <tf/transform_listener.h>
 #include <trajectory_msgs/MultiDOFJointTrajectoryPoint.h>
 
@@ -21,6 +22,8 @@
 #include <deque>
 #include <opencv2/opencv.hpp>
 #include <string>
+#include <chrono>
+#include <thread>
 
 #include "A_star_algorithm.hpp"
 #include "path_planner/setGoalPoint.h"
@@ -37,6 +40,7 @@
 #define SETGOAL_SRV "path_planning/set_goal"
 #define SETGOAL_TOPIC "path_planning/set_goal"
 #define RESET_OCTOMAP_SRV "/octomap_server/reset"
+#define PATHPLANNER_HAS_ENDED_TOPIC "path_planning/has_ended"
 
 #define OCC2BIN_TH 100 // 100 // [0-255]
 #define DIST2BIN_TH 0.7  // [0.0-1.0]
@@ -55,7 +59,9 @@ public:
   ros::Subscriber projected_map_sub_;
   ros::Subscriber laserscan_sub_;
   ros::Subscriber droneposition_sub_;
+
   ros::Publisher waypoint_pub_;
+  ros::Publisher has_ended_pub_;
 
   ros::ServiceServer control_node_srv;
   ros::ServiceServer set_goal_srv;
@@ -76,12 +82,14 @@ public:
   bool setGoalSrv(path_planner::setGoalPoint::Request &_request,
                   path_planner::setGoalPoint::Response &_response);
   void setGoalCallback(const geometry_msgs::PoseStamped &_msg);
+  void endNavigation();
 
   bool new_occupancy_map_ = false;
   bool generate_path_ = false;
   bool run_node_ = false;
   bool check_future_point_ = true;
   bool no_solution_ = false;
+  bool goal_reached_ = false;
 
   int img_h_;
   int img_w_;

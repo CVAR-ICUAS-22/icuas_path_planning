@@ -12,6 +12,8 @@ PathPlanner::PathPlanner() : it_(nh_) {
   waypoint_pub_ = nh_.advertise<trajectory_msgs::MultiDOFJointTrajectoryPoint>(
       WAYPOINT_TOPIC, 1);
   pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(POSE_TOPIC, 1);
+  has_ended_pub_ = nh_.advertise<std_msgs::Bool>(PATHPLANNER_HAS_ENDED_TOPIC, 1);
+
   reset_octomap_ = nh_.serviceClient<std_srvs::Empty>(RESET_OCTOMAP_SRV);
 
   image_publisher_ = it_.advertise(IMAGE_PUB_TOPIC, 1);
@@ -90,12 +92,14 @@ void PathPlanner::start() {
   ROS_INFO("Node started");
   run_node_ = true;
   generate_path_ = true;
+  goal_reached_ = false;
 }
 
 void PathPlanner::stop() {
   ROS_INFO("Node stopped");
   goal_position_ = cv::Point2f(0, 0);
   goal_cell_ = cv::Point2i(0, 0);
+  run_node_ = false;
 }
 
 void PathPlanner::run() {
@@ -123,7 +127,8 @@ void PathPlanner::run() {
     static cv::Point2f hover_position = drone_position_;
     ROS_WARN_ONCE("Solution not found");
     sendWaypoint(hover_position, 0.0);
-    run_node_=false;
+    endNavigation();
+    // run_node_=false;
     return;
   }
 
@@ -140,7 +145,9 @@ void PathPlanner::run() {
                           pow(goal_position_.y - drone_position_.y, 2));
     if (distance < reached_dist_) {
       ROS_INFO("Goal reached");
-      run_node_ = false;
+      // run_node_ = false;
+      goal_reached_ = true;
+      endNavigation();
       return; 
     }
   // }
@@ -206,6 +213,15 @@ void PathPlanner::run() {
   // showMap(path_map, "ICUAS path map", false);
 }
 
+void PathPlanner::endNavigation()
+{
+  std_msgs::Bool msg;
+  msg.data = goal_reached_;
+  has_ended_pub_.publish(msg);
+  // run_node_ = false;
+  ROS_INFO("End navigation");
+}
+
 void PathPlanner::sendWaypoint(const cv::Point2f _next_point,
                                const float _sending_yaw) {
     waypoint_pub_.publish(
@@ -265,23 +281,26 @@ void PathPlanner::generateNewPath() {
   current_path_.clear();
   int n_attempts = 10;
 
-  for (int i=0; i < n_attempts; i++) {
-    ROS_INFO("Generating new path");
-    planner_algorithm_.setOriginPoint(drone_cell_);
-    planner_algorithm_.setGoal(goal_cell_);
-    planner_algorithm_.setOcuppancyGrid(occupancy_map_);
-    current_path_ = planner_algorithm_.solveGraph();
+  // for (int i=0; i < n_attempts; i++) {
+    // ROS_INFO("Generating new path");
+  planner_algorithm_.setOriginPoint(drone_cell_);
+  planner_algorithm_.setGoal(goal_cell_);
+  planner_algorithm_.setOcuppancyGrid(occupancy_map_);
+  current_path_ = planner_algorithm_.solveGraph();
 
-    if (current_path_.size() == 0) {
-      ROS_INFO("Path not found, regenerating occupancy map");
+    // if (current_path_.size() == 0) {
+    //   ROS_INFO("Path not found, regenerating occupancy map");
       // ROS_INFO("Path not found, generating occupancy map %d/%d", i, n_attempts);
-      std_srvs::Empty reset;
-      reset_octomap_.call(reset);
-      continue;
-    }
-    std::cout << "Path found" << std::endl;
-    break;
-  }
+      // std_srvs::Empty reset;
+      // if (reset_octomap_.call(reset)){
+      //   ROS_INFO("Call to service successful");
+      //   std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
+      // }
+      // continue;
+    // }
+  //   break;
+  // }
 }
 
 void PathPlanner::optimizePath() {
@@ -352,34 +371,9 @@ void PathPlanner::occupancyImageCallback(const sensor_msgs::Image &_msg) {
 
   new_occupancy_map_ = true;
 
-
   occupancy_map_ = cv_ptr->image;
   return;
 
-  // if (max_distance_th_ == 0.0) {
-  //   occupancy_map_ = cv_ptr->image;
-  //   return;
-  // }
-
-  // cv::Mat occ_map, binary_map, distance_map, dist_normalized_map;
-  // occ_map = cv_ptr->image;
-  // // Generate Distance Map
-  // cv::threshold(occ_map, binary_map, OCC2BIN_TH, 255,
-  //               cv::THRESH_BINARY); // ensuring binary map
-  // showMap(binary_map, "binary_map", false);
-  // cv::distanceTransform(binary_map, distance_map, cv::DIST_L2, 3);
-  // showMap(distance_map, "distance_map", false);
-  // dist_normalized_map =
-  //     distance_map /
-  //     (max_distance_th_ / occ_grid_size_) ; // normalize distance map respect to the max dist
-  // dist_normalized_map.setTo(1.0f,
-  //                           dist_normalized_map > 1.0f); // clip image to 1.0
-
-  // showMap(dist_normalized_map, "dist_normalized_map", false);
-  // cv::Mat binary_distance_map, binary_occupancy_map;
-  // cv::threshold(dist_normalized_map, binary_distance_map, DIST2BIN_TH, 1,
-  //               cv::THRESH_BINARY);
-  // occupancy_map_ = binary_distance_map;
 }
 
 void PathPlanner::positionCallback(const geometry_msgs::PoseStamped &_msg) {
@@ -422,8 +416,8 @@ bool PathPlanner::setGoalSrv(path_planner::setGoalPoint::Request &_request,
     ROS_WARN("Node already performing path planning");
     return false;
   }
-  // std_srvs::Empty reset;
-  // reset_octomap_.call(reset);
+  std_srvs::Empty reset;
+  reset_octomap_.call(reset);
 
   goal_position_.x = _request.goal.point.x;
   goal_position_.y = _request.goal.point.y;
