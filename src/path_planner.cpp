@@ -125,7 +125,7 @@ void PathPlanner::run() {
 
   if (no_solution_) {
     static cv::Point2f hover_position = drone_position_;
-    ROS_WARN_ONCE("Solution not found");
+    ROS_WARN("Solution not found");
     sendWaypoint(hover_position, 0.0);
     endNavigation();
     // run_node_=false;
