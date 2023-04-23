@@ -136,7 +136,7 @@ void PathPlanner::run() {
   if (generate_path_) {
     generate_path_ = false;
     generateNewPath();
-    // optimizePath();
+    optimizePath();
     send_waypoint = true;
   }
 
@@ -314,7 +314,7 @@ void PathPlanner::optimizePath() {
     return;
   }
 
-  bool optimize = true;
+  bool optimize = false;
   if (!optimize) {
     ref_waypoints_ = current_path_;
     return;
