@@ -2,7 +2,7 @@
 
   <arg name="map_h" default="50.0" />
   <arg name="map_w" default="20.0" />
-  <arg name="img_resolution" default="10.0" />
+  <arg name="resolution" default="0.5" />
   <arg name="occ_map_grid_size" default="0.5" />
   <arg name="z_min_mapped" default="1.0" />
   <arg name="ref_frame" default="world" />
@@ -10,7 +10,7 @@
   <arg name="goal_position_y" default="1.0" />
   <arg name="fly_height" default="2.0" />
   <arg name="security_distance" default="1.0" />
-  <arg name="next_point_reached_dist" default="2.0" />
+  <arg name="next_point_reached_dist" default="0.5" />
   <arg name="speed_controller" default="false" />
   <arg name="max_control_speed" default="1.0" />
   <arg name="x_safe_zone" default="0.0" />
@@ -24,7 +24,7 @@
   <node name="path_planner" pkg="path_planner" type="path_planner_node" output="screen" args="">
     <param name="map_h" type="double" value="$(arg map_h)"/>
     <param name="map_w" type="double" value="$(arg map_w)"/>
-    <param name="img_resolution" type="double" value="$(arg img_resolution)"/>
+    <param name="occmap_resolution" type="double" value="$(arg resolution)"/>
     <param name="occ_grid_size" type="double" value="$(arg occ_map_grid_size)"/>
     <param name="z_min_th" type="double" value="$(arg z_min_mapped)"/>
     <param name="ref_frame" type="str" value="$(arg ref_frame)"/>

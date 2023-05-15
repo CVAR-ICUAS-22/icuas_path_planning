@@ -1,20 +1,17 @@
 #ifndef PATH_PLANNER_HPP_
 #define PATH_PLANNER_HPP_
 
-#include <cv_bridge/cv_bridge.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <image_transport/image_transport.h>
-#include <laser_geometry/laser_geometry.h>
-#include <nav_msgs/OccupancyGrid.h>
-#include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/LaserScan.h>
-#include <sensor_msgs/PointCloud.h>
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
+#include <tf/transform_listener.h>
+
 #include <std_srvs/SetBool.h>
 #include <std_srvs/Empty.h>
 #include <std_msgs/Bool.h>
-#include <tf/transform_listener.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <sensor_msgs/Image.h>
+#include <nav_msgs/OccupancyGrid.h>
 #include <trajectory_msgs/MultiDOFJointTrajectoryPoint.h>
 
 #include <Eigen/Dense>
@@ -28,19 +25,17 @@
 #include "A_star_algorithm.hpp"
 #include "path_planner/setGoalPoint.h"
 
-#define OCCUPANCY_IMAGE_TOPIC "/occupancy_image"
-#define PROJECTED_MAP_TOPIC "/projected_map"
-#define LASERSCAN_TOPIC "scan"
 #define DRONEPOSITION_TOPIC "pose"
 #define WAYPOINT_TOPIC "position_hold/trajectory"
-#define SPEEDCONTROL_TOPIC "motion_reference/speed"
 #define POSE_TOPIC "motion_reference/pose"
+#define OCCUPANCY_IMAGE_TOPIC "/occupancy_image"
 #define IMAGE_PUB_TOPIC "occupancy_map"
+#define PATHPLANNER_HAS_ENDED_TOPIC "path_planning/has_ended"
+#define SPEEDCONTROL_TOPIC "motion_reference/speed"
+
 #define CONTROLNODE_SRV "path_planning/run"
 #define SETGOAL_SRV "path_planning/set_goal"
-#define SETGOAL_TOPIC "path_planning/set_goal"
 #define RESET_OCTOMAP_SRV "/octomap_server/reset"
-#define PATHPLANNER_HAS_ENDED_TOPIC "path_planning/has_ended"
 
 #define OCC2BIN_TH 100 // 100 // [0-255]
 #define DIST2BIN_TH 0.7  // [0.0-1.0]
@@ -56,8 +51,6 @@ public:
 
   ros::NodeHandle nh_;
   ros::Subscriber occupancy_image_sub_;
-  ros::Subscriber projected_map_sub_;
-  ros::Subscriber laserscan_sub_;
   ros::Subscriber droneposition_sub_;
 
   ros::Publisher waypoint_pub_;
@@ -66,12 +59,9 @@ public:
   ros::ServiceServer control_node_srv;
   ros::ServiceServer set_goal_srv;
   ros::ServiceClient reset_octomap_;
-  // ros::Subscriber set_goal_sub_;
 
   image_transport::ImageTransport it_;
   image_transport::Publisher image_publisher_;
-
-  tf::TransformListener tf_listener_;
 
   AStarPlanner planner_algorithm_;
 
@@ -81,7 +71,6 @@ public:
                       std_srvs::SetBool::Response &_response);
   bool setGoalSrv(path_planner::setGoalPoint::Request &_request,
                   path_planner::setGoalPoint::Response &_response);
-  void setGoalCallback(const geometry_msgs::PoseStamped &_msg);
   void endNavigation();
 
   bool new_occupancy_map_ = false;
@@ -90,32 +79,26 @@ public:
   bool check_future_point_ = true;
   bool no_solution_ = false;
   bool goal_reached_ = false;
+  bool occ_map_received_ = false;
+  bool optimize_path_ = false;
 
-  int img_h_;
-  int img_w_;
-  float img_resolution_;
-  float occ_grid_size_;
-  float z_min_th_;
-  std::string ref_frame_;
-  cv::Size grid_size_;
-
-  cv::Mat occupancy_map_;
-
-  std::vector<float> laser_mesuraments_;
-  std::vector<cv::Point2i> current_path_;
-  std::vector<cv::Point2i> ref_waypoints_;
+  int occmap_h_;
+  int occmap_w_;
+  float occmap_resolution_;
+  float drone_yaw_;
+  float fly_height_;
+  float next_point_reached_dist_;
+  float goal_reached_dist_ = 1.0;
 
   cv::Point2f drone_position_;
   cv::Point2f goal_position_;
-  float drone_yaw_;
-  float fly_height_;
-  float max_distance_th_;
-  float next_point_reached_dist_;
-  float x_safe_zone_;
-  float reached_dist_ = 1.0;
-
   cv::Point2i drone_cell_;
   cv::Point2i goal_cell_;
+
+  std::vector<cv::Point2i> current_path_;
+  std::vector<cv::Point2i> ref_waypoints_;
+
+  cv::Mat occupancy_map_;
 
   // Begin of SPEED_CONTROLLER
   ros::Publisher speed_control_pub_;
@@ -134,12 +117,8 @@ public:
                const bool _add_drone);
 
   cv::Mat generateShowImg(const cv::Mat &_img, const cv::Point2i &_drone_px);
-  cv::Point2i coord2img(const float _x, const float _y, const int _img_h,
-                        const int _img_w);
-  cv::Point2i coord2grid(const float _x, const float _y, const int _img_h,
-                         const int _img_w);
-  cv::Point2f grid2coord(const cv::Point2i &_point, const int _img_h,
-                         const int _img_w);
+  cv::Point2i coord2map(const cv::Point2f &_point); 
+  cv::Point2f map2coord(const cv::Point2i &_point);
 };
 
 trajectory_msgs::MultiDOFJointTrajectoryPoint

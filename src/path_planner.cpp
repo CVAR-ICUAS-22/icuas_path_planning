@@ -1,6 +1,5 @@
 #include "path_planner.hpp"
 
-#include "geometry_msgs/PoseStamped.h"
 
 PathPlanner::PathPlanner() : it_(nh_) {
   occupancy_image_sub_ = nh_.subscribe(
@@ -13,78 +12,50 @@ PathPlanner::PathPlanner() : it_(nh_) {
       WAYPOINT_TOPIC, 1);
   pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(POSE_TOPIC, 1);
   has_ended_pub_ = nh_.advertise<std_msgs::Bool>(PATHPLANNER_HAS_ENDED_TOPIC, 1);
+  image_publisher_ = it_.advertise(IMAGE_PUB_TOPIC, 1);
 
   reset_octomap_ = nh_.serviceClient<std_srvs::Empty>(RESET_OCTOMAP_SRV);
 
-  image_publisher_ = it_.advertise(IMAGE_PUB_TOPIC, 1);
   control_node_srv =
       nh_.advertiseService(CONTROLNODE_SRV, &PathPlanner::controlNodeSrv, this);
   set_goal_srv =
       nh_.advertiseService(SETGOAL_SRV, &PathPlanner::setGoalSrv, this);
-  // set_goal_sub_ =
-  //     nh_.subscribe(SETGOAL_TOPIC, 1, &PathPlanner::setGoalCallback, this);
+
   float map_h;
   float map_w;
-  float max_distance;
-  float occ_map_grid_size;
-  float goal_position_x, goal_position_y;
 
   nh_.getParam("path_planner/map_h", map_h);
   nh_.getParam("path_planner/map_w", map_w);
-  nh_.getParam("path_planner/img_resolution", img_resolution_);
-  nh_.getParam("path_planner/occ_grid_size", occ_map_grid_size);
-  nh_.getParam("path_planner/z_min_th", z_min_th_);
-  nh_.getParam("path_planner/ref_frame", ref_frame_);
+  nh_.getParam("path_planner/occmap_resolution", occmap_resolution_);
 
-  nh_.getParam("path_planner/goal_position_x", goal_position_x);
-  nh_.getParam("path_planner/goal_position_y", goal_position_y);
   nh_.getParam("path_planner/fly_height", fly_height_);
-  nh_.getParam("path_planner/security_distance", max_distance);
   nh_.getParam("path_planner/next_point_reached_dist",
                next_point_reached_dist_);
-  nh_.getParam("path_planner/speed_controller", speed_controller_);
-  nh_.getParam("path_planner/max_control_speed", max_control_speed_);
-  nh_.getParam("path_planner/x_safe_zone", x_safe_zone_);
 
   ROS_INFO("map_h: %.2f", map_h);
   ROS_INFO("map_w: %.2f", map_w);
-  ROS_INFO("img_resolution: %.2f", img_resolution_);
-  ROS_INFO("occ_grid_size: %.2f", occ_map_grid_size);
-  ROS_INFO("z_min_th: %.2f", z_min_th_);
-  ROS_INFO("ref_frame: %s", ref_frame_.c_str());
+  ROS_INFO("resolution: %.2f", occmap_resolution_);
   ROS_INFO("fly_height: %.2f", fly_height_);
-  ROS_INFO("security distance: %.2f", max_distance);
   ROS_INFO("next_point_reached_dist: %.2f", next_point_reached_dist_);
-  next_point_reached_dist_ = reached_dist_/2.0f;
-  std::string controller_str = speed_controller_ ? "SPEED" : "POSITION";
-  ROS_INFO("controller: %s", controller_str.c_str());
-  if (speed_controller_) {
-    ROS_INFO("control_speed: %.2f", max_control_speed_);
-  }
 
-  // ref_frame_ = REF_FRAME;
-  img_h_ = map_h * img_resolution_;
-  img_w_ = map_w * img_resolution_;
-  ROS_INFO("img_h: %d", img_h_);
-  ROS_INFO("img_w: %d", img_w_);
-  occ_grid_size_ = occ_map_grid_size * img_resolution_;
-  grid_size_.width = int((map_w / occ_map_grid_size));
-  grid_size_.height = int((map_h / occ_map_grid_size));
-  occupancy_map_ =
-      cv::Mat::zeros(grid_size_.height, grid_size_.width, CV_8UC1) * 255;
-  max_distance_th_ = max_distance * img_resolution_;
+  occmap_h_ = int(map_h / occmap_resolution_);
+  occmap_w_ = int(map_w / occmap_resolution_);
 
-  if (speed_controller_) {
-    speed_control_pub_ =
-        nh_.advertise<geometry_msgs::TwistStamped>(SPEEDCONTROL_TOPIC, 1);
-  }
+  occ_map_received_ = false;
 
-  // Node start
-  // goal_position_ = cv::Point2f(6, 0);
-  goal_position_ = cv::Point2f(goal_position_x, goal_position_y);
-  goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
-  ROS_WARN("Goal position set to default: %f, %f", goal_position_.x,
-           goal_position_.y);
+  // nh_.getParam("path_planner/speed_controller", speed_controller_);
+  // nh_.getParam("path_planner/max_control_speed", max_control_speed_);
+  //
+  // std::string controller_str = speed_controller_ ? "SPEED" : "POSITION";
+  // ROS_INFO("controller: %s", controller_str.c_str());
+  // if (speed_controller_) {
+  //   ROS_INFO("control_speed: %.2f", max_control_speed_);
+  // }
+  // if (speed_controller_) {
+  //   speed_control_pub_ =
+  //       nh_.advertise<geometry_msgs::TwistStamped>(SPEEDCONTROL_TOPIC, 1);
+  // }
+
 }
 
 PathPlanner::~PathPlanner() {}
@@ -107,21 +78,22 @@ void PathPlanner::stop() {
 void PathPlanner::run() {
   static bool send_waypoint = false;
 
+  if (!occ_map_received_) {
+    return;
+  }
+
   cv::Mat path_map = generatePathImg(occupancy_map_, drone_cell_, current_path_,
                                      ref_waypoints_);
   sendMap(path_map);
-  showMap(path_map, "RUN MAP", false);
+  showMap(path_map, "PATH PLANNER MAP", false);
 
   if (!run_node_) {
     return;
   }
 
-
   if (new_occupancy_map_)
   {
     new_occupancy_map_ = false;
-    // ROS_DEBUG("New occupancy map available");
-    // sendMap(occupancy_map_); // DEBUG
     checkCurrentPath();
   }
 
@@ -130,7 +102,6 @@ void PathPlanner::run() {
     ROS_WARN("Solution not found");
     sendWaypoint(hover_position, 0.0);
     endNavigation();
-    // run_node_=false;
     return;
   }
 
@@ -142,23 +113,19 @@ void PathPlanner::run() {
   }
 
   // Check if the goal has been reached
-  // if (run_node_) {
-    float distance = sqrt(pow(goal_position_.x - drone_position_.x, 2) +
-                          pow(goal_position_.y - drone_position_.y, 2));
-    if (distance < reached_dist_) {
-      ROS_INFO("Goal reached");
-      // run_node_ = false;
-      goal_reached_ = true;
-      endNavigation();
-      return; 
-    }
-  // }
+  float distance = sqrt(pow(goal_position_.x - drone_position_.x, 2) +
+                        pow(goal_position_.y - drone_position_.y, 2));
+  if (distance < goal_reached_dist_) {
+    ROS_INFO("Goal reached");
+    goal_reached_ = true;
+    endNavigation();
+    return; 
+  }
   
-  // TESTING YAW
-  // if (current_path_.size() > 0 & send_waypoint)
   if (ref_waypoints_.size() > 0) {
     float sending_yaw;
-    cv::Point2f next_point = grid2coord(ref_waypoints_[0], img_h_, img_w_);
+    cv::Point2f next_point = map2coord(ref_waypoints_[0]);
+
     double distance_to_next_point =
         sqrt(pow(next_point.x - drone_position_.x, 2) +
              pow(next_point.y - drone_position_.y, 2));
@@ -172,7 +139,7 @@ void PathPlanner::run() {
       if (check_future_point_) {
         // Check future point
         cv::Point2f future_point =
-            grid2coord(ref_waypoints_[1], img_h_, img_w_);
+            map2coord(ref_waypoints_[1]);
 
         float future_yaw = atan2(future_point.y - drone_position_.y,
                                  future_point.x - drone_position_.x);
@@ -191,8 +158,6 @@ void PathPlanner::run() {
         else {
           sending_yaw = future_yaw;
           send_waypoint = true;
-          // waypoint_pub_.publish(createTrajectoryFromPointMsg(next_point,
-          // fly_height_, future_yaw));
         }
       }
     }
@@ -201,8 +166,6 @@ void PathPlanner::run() {
       float next_yaw = atan2(next_point.y - drone_position_.y,
                              next_point.x - drone_position_.x);
       sending_yaw = next_yaw;
-      // waypoint_pub_.publish(createTrajectoryFromPointMsg(next_point,
-      // fly_height_, next_yaw));
       send_waypoint = true;
     }
 
@@ -220,7 +183,6 @@ void PathPlanner::endNavigation()
   std_msgs::Bool msg;
   msg.data = goal_reached_;
   has_ended_pub_.publish(msg);
-  // run_node_ = false;
   ROS_INFO("End navigation");
 }
 
@@ -230,38 +192,6 @@ void PathPlanner::sendWaypoint(const cv::Point2f _next_point,
         createTrajectoryFromPointMsg(_next_point, fly_height_, _sending_yaw));
 }
 
-void showCombinedMap(std::vector<cv::Mat> maps, std::string window_name) {
-  cv::Mat combined_map_top, combined_map_bot, combined_map;
-  // for (auto m : maps)
-  // {
-  //   ROS_INFO("Map size: %d, %d, %d", m.size().height, m.size().width,
-  //   m.channels()); ROS_INFO("Map type: %d", m.type());
-  // }
-
-  for (int i = 0; i < maps.size(); i++) {
-    if (i == 0) {
-      combined_map_top = maps[i];
-    } else if (i < 2) {
-      cv::hconcat(combined_map_top, maps[i], combined_map_top);
-    }
-
-    if (i == 2) {
-      combined_map_bot = maps[i];
-    } else if (i > 2 && i < 5) {
-      cv::hconcat(combined_map_bot, maps[i], combined_map_bot);
-    }
-  }
-
-  // std::vector<cv::Mat> m_top(maps.begin(), maps.begin() + 2);
-  // std::vector<cv::Mat> m_bot(maps.begin() + 3, maps.end());
-  // cv::hconcat(m_top, combined_map_top);
-  cv::imshow("map_top", combined_map_top);
-  // cv::hconcat(m_bot, combined_map_bot);
-  cv::imshow("map_bot", combined_map_bot);
-  // cv::vconcat(combined_map_top, combined_map_bot, combined_map);
-  // cv::imshow(window_name, combined_map);
-  cv::waitKey(1);
-}
 
 void PathPlanner::checkCurrentPath() {
   // Check current path is not empty
@@ -281,8 +211,9 @@ void PathPlanner::checkCurrentPath() {
 
 void PathPlanner::generateNewPath() {
   current_path_.clear();
-  int n_attempts = 10;
+  // int n_attempts = 10;
 
+  // Try to find a solution many times before give up
   // for (int i=0; i < n_attempts; i++) {
     // ROS_INFO("Generating new path");
   planner_algorithm_.setOriginPoint(drone_cell_);
@@ -315,8 +246,7 @@ void PathPlanner::optimizePath() {
     return;
   }
 
-  bool optimize = false;
-  if (!optimize) {
+  if (!optimize_path_) {
     ref_waypoints_ = current_path_;
     return;
   }
@@ -356,12 +286,6 @@ void PathPlanner::optimizePath() {
 
 // CALLBACK
 
-void show_image_resized(const std::string &_title, const cv::Mat &_image) {
-  cv::Mat map_resized = cv::Mat::zeros(_image.size() * 5, _image.type());
-  cv::resize(_image, map_resized, map_resized.size(), 0, 0, cv::INTER_NEAREST);
-  cv::imshow(_title, map_resized);
-}
-
 void PathPlanner::occupancyImageCallback(const sensor_msgs::Image &_msg) {
   cv_bridge::CvImagePtr cv_ptr;
   try {
@@ -371,11 +295,11 @@ void PathPlanner::occupancyImageCallback(const sensor_msgs::Image &_msg) {
     return;
   }
 
-  new_occupancy_map_ = true;
   occupancy_map_ = cv_ptr->image;
+  new_occupancy_map_ = true;
+  occ_map_received_ = true;
 
   return;
-
 }
 
 void PathPlanner::positionCallback(const geometry_msgs::PoseStamped &_msg) {
@@ -383,9 +307,7 @@ void PathPlanner::positionCallback(const geometry_msgs::PoseStamped &_msg) {
   drone_position_.y = _msg.pose.position.y;
 
   drone_yaw_ = tf::getYaw(_msg.pose.orientation);
-
-  drone_cell_ =
-      coord2grid(drone_position_.x, drone_position_.y, img_h_, img_w_);
+  drone_cell_ = coord2map(drone_position_);
 }
 
 bool PathPlanner::controlNodeSrv(std_srvs::SetBool::Request &_request,
@@ -431,26 +353,11 @@ bool PathPlanner::setGoalSrv(path_planner::setGoalPoint::Request &_request,
       "Goal position set to: " + std::to_string(goal_position_.x) + ", " +
       std::to_string(goal_position_.y);
 
-  goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
+  goal_cell_ = coord2map(goal_position_);
 
   start();
 
   return true;
-}
-
-void PathPlanner::setGoalCallback(const geometry_msgs::PoseStamped &_msg) {
-  float distance = sqrt(pow(_msg.pose.position.x - drone_position_.x, 2) +
-                        pow(_msg.pose.position.y - drone_position_.y, 2));
-  if (distance < 1.0) {
-    return;
-  }
-
-  goal_position_.x = _msg.pose.position.x;
-  goal_position_.y = _msg.pose.position.y;
-
-  ROS_INFO("Goal position: %f, %f", goal_position_.x, goal_position_.y);
-
-  goal_cell_ = coord2grid(goal_position_.x, goal_position_.y, img_h_, img_w_);
 }
 
 // PUBLISH
@@ -463,16 +370,50 @@ void PathPlanner::sendMap(cv::Mat _map) {
 
 // DEBUG
 
+void show_image_resized(const std::string &_title, const cv::Mat &_image) {
+  cv::Mat map_resized = cv::Mat::zeros(_image.size() * 5, _image.type());
+  cv::resize(_image, map_resized, map_resized.size(), 0, 0, cv::INTER_NEAREST);
+  cv::imshow(_title, map_resized);
+}
+
+void showCombinedMap(std::vector<cv::Mat> maps, std::string window_name) {
+  cv::Mat combined_map_top, combined_map_bot, combined_map;
+
+  for (int i = 0; i < maps.size(); i++) {
+    if (i == 0) {
+      combined_map_top = maps[i];
+    } else if (i < 2) {
+      cv::hconcat(combined_map_top, maps[i], combined_map_top);
+    }
+
+    if (i == 2) {
+      combined_map_bot = maps[i];
+    } else if (i > 2 && i < 5) {
+      cv::hconcat(combined_map_bot, maps[i], combined_map_bot);
+    }
+  }
+
+  // std::vector<cv::Mat> m_top(maps.begin(), maps.begin() + 2);
+  // std::vector<cv::Mat> m_bot(maps.begin() + 3, maps.end());
+  // cv::hconcat(m_top, combined_map_top);
+  cv::imshow("map_top", combined_map_top);
+  // cv::hconcat(m_bot, combined_map_bot);
+  cv::imshow("map_bot", combined_map_bot);
+  // cv::vconcat(combined_map_top, combined_map_bot, combined_map);
+  // cv::imshow(window_name, combined_map);
+  cv::waitKey(1);
+}
+
 void PathPlanner::showMap(const cv::Mat &_map, const std::string &_map_name,
                           const bool _add_drone) {
   cv::namedWindow(_map_name, cv::WINDOW_FREERATIO);
   // Generate image to show
   if (_add_drone) {
-    cv::Point2i img_drone_position;
-    img_drone_position =
-        coord2img(drone_position_.x, drone_position_.y, img_h_, img_w_);
-    cv::Mat map_img = generateShowImg(_map, img_drone_position);
-    cv::imshow(_map_name, map_img);
+    // cv::Point2i img_drone_position;
+    // img_drone_position =
+    //     coord2img(drone_position_.x, drone_position_.y, img_h_, img_w_);
+    // cv::Mat map_img = generateShowImg(_map, img_drone_position);
+    // cv::imshow(_map_name, map_img);
   } else {
     cv::imshow(_map_name, _map);
   }
@@ -514,45 +455,32 @@ cv::Mat generatePathImg(const cv::Mat &_map, const cv::Point2i &_drone_px,
 }
 
 // AUXILIAR FUNCTION
+//
+cv::Point2i PathPlanner::coord2map(const cv::Point2f &_point) {
 
-cv::Point2i PathPlanner::coord2img(const float _x, const float _y,
-                                   const int _img_h, const int _img_w) {
-  cv::Point2i img_point;
-  float x = _x * img_resolution_;
-  float y = _y * img_resolution_;
+  cv::Point2i map_point;
+  float x = _point.x / occmap_resolution_;
+  float y = _point.y / occmap_resolution_;
 
   // swaping x and y
-  img_point.x = int(_img_h - y);
-  img_point.y = int(x);
-
+  map_point.x = int(occmap_h_ - y);
+  map_point.y = int(x);
   // saturate with _img_h and _img_w
-  img_point.x = std::max(img_point.x, 0);
-  img_point.x = std::min(img_point.x, _img_h - 1);
+  map_point.x = std::max(map_point.x, 0);
+  map_point.x = std::min(map_point.x, occmap_h_ - 1);
 
-  img_point.y = std::max(img_point.y, 0);
-  img_point.y = std::min(img_point.y, _img_w - 1);
+  map_point.y = std::max(map_point.y, 0);
+  map_point.y = std::min(map_point.y, occmap_w_ - 1);
 
-  return img_point; // in pixel
+  return map_point;
 }
 
-cv::Point2i PathPlanner::coord2grid(const float _x, const float _y,
-                                    const int _img_h, const int _img_w) {
-  cv::Point2i img_drone_position, grid_drone_position;
-  img_drone_position = coord2img(_x, _y, _img_h, _img_w);
+cv::Point2f PathPlanner::map2coord(const cv::Point2i &_point) {
 
-  grid_drone_position.x = int((img_drone_position.x / occ_grid_size_)); // x
-  grid_drone_position.y = int((img_drone_position.y / occ_grid_size_)); // y
-
-  grid2coord(grid_drone_position, _img_h, _img_w);
-  return grid_drone_position; // unitless ¿?
-}
-
-cv::Point2f PathPlanner::grid2coord(const cv::Point2i &_point, const int _img_h,
-                                    const int _img_w) {
   cv::Point2f coord_point;
+  coord_point.x = _point.y * occmap_resolution_;
+  coord_point.y = (occmap_h_ - _point.x) * occmap_resolution_;
 
-  coord_point.x = (_point.y * occ_grid_size_) / img_resolution_;
-  coord_point.y = (img_h_ - _point.x * occ_grid_size_) / img_resolution_;
   return coord_point; // in meters
 }
 
@@ -572,7 +500,6 @@ createTrajectoryFromPointMsg(const cv::Point2f &_point, const float _height,
   trajectory_point.transforms[0].rotation.y = q.y();
   trajectory_point.transforms[0].rotation.z = q.z();
   trajectory_point.transforms[0].rotation.w = q.w();
-  // trajectory_point.
   trajectory_point.velocities.resize(1);
   // trajectory_point.velocities[0].x = 0;
   // trajectory_point.velocities[0].y = 0;
