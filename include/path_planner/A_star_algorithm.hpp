@@ -122,10 +122,10 @@ public:
     valid_movements_.emplace_back(0, 1);
     valid_movements_.emplace_back(1, 0);
 
-    valid_movements_.emplace_back(-1, -1);
-    valid_movements_.emplace_back(-1, 1);
-    valid_movements_.emplace_back(1, -1);
-    valid_movements_.emplace_back(1, 1);
+    // valid_movements_.emplace_back(-1, -1);
+    // valid_movements_.emplace_back(-1, 1);
+    // valid_movements_.emplace_back(1, -1);
+    // valid_movements_.emplace_back(1, 1);
   }
 
   void setOcuppancyGrid(const cv::Mat &mat) { ocuppancy_grid_ = mat.clone(); }
@@ -212,7 +212,7 @@ public:
       // if goal is finded
       if (new_node->get_coordinates().x == goal_.x && new_node->get_coordinates().y == goal_.y)
       {
-        std::cout << "PATH GENERATED" << std::endl;
+        // std::cout << "PATH GENERATED" << std::endl;
         NodePtr parent_ptr = new_node;
         do
         {
