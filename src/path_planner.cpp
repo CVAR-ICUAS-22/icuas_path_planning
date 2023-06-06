@@ -11,7 +11,8 @@ PathPlanner::PathPlanner() : it_(nh_)
   waypoint_pub_ = nh_.advertise<trajectory_msgs::MultiDOFJointTrajectoryPoint>(WAYPOINT_TOPIC, 1);
   pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(POSE_TOPIC, 1);
   has_ended_pub_ = nh_.advertise<std_msgs::Bool>(PATHPLANNER_HAS_ENDED_TOPIC, 1);
-  image_publisher_ = it_.advertise(IMAGE_PUB_TOPIC, 1);
+  image_publisher_ = it_.advertise(OCCMAP_PUB_TOPIC, 1);
+  egomap_publisher_ = it_.advertise(EGOMAP_PUB_TOPIC, 1);
 
   control_node_srv = nh_.advertiseService(CONTROLNODE_SRV, &PathPlanner::controlNodeSrv, this);
   set_goal_srv = nh_.advertiseService(SETGOAL_SRV, &PathPlanner::setGoalSrv, this);
@@ -281,13 +282,16 @@ void PathPlanner::generateOccupancyMap()
   
   // Crop the map around the drone_cell_
   cv::Point2i drone_px = coord2img(drone_position_.x, drone_position_.y);
-  float ego_radious = 2.5;
-  int crop_distance = int(ego_radious / img_resolution_);
+  int crop_distance = int(ego_radious_ / img_resolution_);
 
   cv::Range r1(cv::Range(std::max(0, drone_px.x - crop_distance), std::min(drone_px.x + crop_distance, img_size_.height-1)));
   cv::Range r2(cv::Range(std::max(0, drone_px.y - crop_distance), std::min(drone_px.y + crop_distance, img_size_.width-1))); 
 
   cv::Mat ego_map = binary_map(r1,r2);
+
+  sensor_msgs::ImagePtr egomap_msg =
+      cv_bridge::CvImage(std_msgs::Header(), "mono8", ego_map).toImageMsg();
+  egomap_publisher_.publish(egomap_msg);
 
   // cv::Mat ego_map = binary_map(cv::Rect(drone_px.x - crop_distance, drone_px.y - crop_distance,
   //                                       2 * crop_distance, 2 * crop_distance));
@@ -676,10 +680,11 @@ bool PathPlanner::setGoalSrv(path_planner::setGoalPoint::Request &_request,
     _response.success = false;
     _response.message = "Goal position unreacheable"; 
     return true;
+  }else {
+    goal_position_ = grid2coord(goal_cell_);
+    // std::cout << "New goal: " << goal_position_ << std::endl;
+    ROS_INFO("New goal: %f, %f", goal_position_.x, goal_position_.y);
   }
-
-  goal_position_ = grid2coord(goal_cell_);
-  std::cout << "New goal: " << goal_position_ << std::endl;
 
   _response.success = true;
   _response.message = "Goal position set to: " + std::to_string(goal_position_.x) + ", " +

@@ -31,7 +31,8 @@
 #define WAYPOINT_TOPIC "position_hold/trajectory"
 #define SPEEDCONTROL_TOPIC "motion_reference/speed"
 #define POSE_TOPIC "motion_reference/pose"
-#define IMAGE_PUB_TOPIC "occupancy_map"
+#define OCCMAP_PUB_TOPIC "occupancy_map"
+#define EGOMAP_PUB_TOPIC "ego_map"
 #define PATHPLANNER_HAS_ENDED_TOPIC "path_planning/has_ended"
 
 #define CONTROLNODE_SRV "path_planning/run"
@@ -61,6 +62,7 @@ class PathPlanner {
 
   image_transport::ImageTransport it_;
   image_transport::Publisher image_publisher_;
+  image_transport::Publisher egomap_publisher_;
 
   // tf2_ros::Buffer tf_buffer_;
   // tf2_ros::TransformListener tf_listener_;
@@ -86,6 +88,7 @@ class PathPlanner {
   float goal_reached_dist_ = 1.0; //meters
   float drone_max_distance_ = 5.0; // meters
   float goal_max_distance_ = 5.0; // meters
+  float ego_radious_ = 2.5; // meters
   std::string ref_frame_ = "world";
   bool check_future_point_ = false;
   int max_attempts_ = 5;
