@@ -30,6 +30,7 @@ PathPlanner::PathPlanner() : it_(nh_)
 
   nh_.getParam("path_planner/fly_height", fly_height_);
   nh_.getParam("path_planner/security_distance", security_distance);
+  nh_.getParam("path_planner/egomap_distance", ego_radious_);
   nh_.getParam("path_planner/next_point_reached_dist", next_point_reached_dist_);
   // SPEED CONTROLLER
   nh_.getParam("path_planner/speed_controller", speed_controller_);
@@ -44,6 +45,7 @@ PathPlanner::PathPlanner() : it_(nh_)
 
   ROS_INFO("fly_height: %.2f", fly_height_);
   ROS_INFO("security distance: %.2f", security_distance);
+  ROS_INFO("egomap distance: %.2f", ego_radious_);
   ROS_INFO("next_point_reached_dist: %.2f", next_point_reached_dist_);
   // SPEED CONTROLLER
   std::string controller_str = speed_controller_ ? "SPEED" : "POSITION";

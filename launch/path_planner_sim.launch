@@ -13,6 +13,7 @@
   <arg name="ref_frame" default="world" />
   <arg name="fly_height" default="2.0" />
   <arg name="security_distance" default="1.0" />
+  <arg name="egomap_distance" default="2.5" />
   <arg name="next_point_reached_dist" default="0.5" />
   <arg name="speed_controller" default="false" />
   <arg name="max_control_speed" default="1.0" />
@@ -52,6 +53,7 @@
     <param name="ref_frame" type="str" value="$(arg ref_frame)"/>
     <param name="fly_height" type="double" value="$(arg fly_height)"/>
     <param name="security_distance" type="double" value="$(arg security_distance)"/>
+    <param name="egomap_distance" type="double" value="$(arg egomap_distance)"/>
     <param name="next_point_reached_dist" type="double" value="$(arg next_point_reached_dist)"/>
     <param name="speed_controller" type="bool" value="$(arg speed_controller)"/>
     <param name="max_control_speed" type="double" value="$(arg max_control_speed)"/>
