@@ -609,9 +609,10 @@ void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
     if (point.z > z_min_th_) {
       img_point = coord2img(point.x, point.y);
       // FILTER LASER AT LIMIT OF IMAGE
-      if (img_point.x == 0 || img_point.y == 0 ||
-          img_point.x == (img_size_.height - 1) ||
-          img_point.y == (img_size_.width - 1)) {
+      if (img_point.x >= (0 + LASER_FILTER_MARGIN) ||
+          img_point.y >= (0 + LASER_FILTER_MARGIN) ||
+          img_point.x <= (img_size_.height - 1 - LASER_FILTER_MARGIN) ||
+          img_point.y <= (img_size_.width - 1 - LASER_FILTER_MARGIN)) {
         continue;
       }
       local_laser_map.at<uchar>(img_point.x, img_point.y) = 255;
