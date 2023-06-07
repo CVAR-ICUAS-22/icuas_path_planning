@@ -857,8 +857,10 @@ cv::Point2i PathPlanner::coord2img(const float _x, const float _y)
   if (center_origin_) {
     int w = img_size_.width / 2;
     int h = img_size_.height / 2;
-    img_point.x = int(h - y);
-    img_point.y = int(w + x);
+    // img_point.x = int(h - y);
+    // img_point.y = int(w + x);
+    img_point.x = int(h - x);
+    img_point.y = int(w - y);
   }
   else {
     // swamping x and y
@@ -885,8 +887,10 @@ cv::Point2i PathPlanner::coord2grid(const cv::Point2f &_point)
   if (center_origin_) {
     int w = grid_size_.width / 2;
     int h = grid_size_.height / 2;
-    grid_position.x = int(h - y);
-    grid_position.y = int(w + x);
+    // grid_position.x = int(h - y);
+    // grid_position.y = int(w + x);
+    grid_position.x = int(h - x);
+    grid_position.y = int(w - y);
   }
   else {
     // swamping x and y
@@ -909,8 +913,8 @@ cv::Point2f PathPlanner::grid2coord(const cv::Point2i &_point)
   cv::Point2f coord_point;
 
   if (center_origin_) {
-    coord_point.x = (double)(_point.y - grid_size_.width/2.0) * occmap_resolution_;
-    coord_point.y = (double)(grid_size_.height/2.0 - _point.x) * occmap_resolution_;
+    coord_point.x = (double)(grid_size_.height/2.0 - _point.x) * occmap_resolution_;
+    coord_point.y = (double)(grid_size_.width/2.0 - _point.y) * occmap_resolution_;
   }
   else {
     coord_point.x = (double)_point.y * occmap_resolution_;
