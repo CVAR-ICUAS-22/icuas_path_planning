@@ -93,6 +93,7 @@ class PathPlanner {
   bool check_future_point_ = false;
   int max_attempts_ = 5;
   int attempts_count_ = 0;
+  bool center_origin_ = true;
 
   bool run_node_ = false;
   bool goal_reached_ = false;

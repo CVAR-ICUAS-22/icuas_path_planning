@@ -9,6 +9,7 @@
   <arg name="map_w" default="16.0" />
   <arg name="img_resolution" default="10.0" />
   <arg name="occmap_resolution" default="0.3" />
+  <arg name="center_origin" default="false" />
   <arg name="z_min_mapped" default="1.0" />
   <arg name="ref_frame" default="world" />
   <arg name="fly_height" default="2.0" />
@@ -49,6 +50,7 @@
     <param name="map_w" type="double" value="$(arg map_w)"/>
     <param name="img_resolution" type="double" value="$(arg img_resolution)"/>
     <param name="occmap_resolution" type="double" value="$(arg occmap_resolution)"/>
+    <param name="center_origin" type="bool" value="$(arg center_origin)"/>
     <param name="z_min_th" type="double" value="$(arg z_min_mapped)"/>
     <param name="ref_frame" type="str" value="$(arg ref_frame)"/>
     <param name="fly_height" type="double" value="$(arg fly_height)"/>

@@ -25,6 +25,7 @@ PathPlanner::PathPlanner() : it_(nh_)
   nh_.getParam("path_planner/map_w", map_w);
   nh_.getParam("path_planner/img_resolution", img_resolution_);
   nh_.getParam("path_planner/occmap_resolution", occmap_resolution_);
+  nh_.getParam("path_planner/center_origin", center_origin_);
   nh_.getParam("path_planner/z_min_th", z_min_th_);
   nh_.getParam("path_planner/ref_frame", ref_frame_);
 
@@ -42,6 +43,9 @@ PathPlanner::PathPlanner() : it_(nh_)
   ROS_INFO("occmap_resolution: %.2f", occmap_resolution_);
   ROS_INFO("z_min_th: %.2f", z_min_th_);
   ROS_INFO("ref_frame: %s", ref_frame_.c_str());
+  if (center_origin_) {
+    ROS_INFO("Map origin centered");
+  }
 
   ROS_INFO("fly_height: %.2f", fly_height_);
   ROS_INFO("security distance: %.2f", security_distance);
@@ -850,9 +854,17 @@ cv::Point2i PathPlanner::coord2img(const float _x, const float _y)
   float x = _x / img_resolution_;
   float y = _y / img_resolution_;
 
-  // swamping x and y
-  img_point.x = int(img_size_.height - y);
-  img_point.y = int(x);
+  if (center_origin_) {
+    int w = img_size_.width / 2;
+    int h = img_size_.height / 2;
+    img_point.x = int(h - y);
+    img_point.y = int(w + x);
+  }
+  else {
+    // swamping x and y
+    img_point.x = int(img_size_.height - y);
+    img_point.y = int(x);
+  }
 
   // saturate with _img_h and _img_w
   img_point.x = std::max(img_point.x, 0);
@@ -869,9 +881,19 @@ cv::Point2i PathPlanner::coord2grid(const cv::Point2f &_point)
   cv::Point2i grid_position;
   float x = _point.x / occmap_resolution_;
   float y = _point.y / occmap_resolution_;
-  // swamping x and y
-  grid_position.x = int(grid_size_.height - y);
-  grid_position.y = int(x);
+
+  if (center_origin_) {
+    int w = grid_size_.width / 2;
+    int h = grid_size_.height / 2;
+    grid_position.x = int(h - y);
+    grid_position.y = int(w + x);
+  }
+  else {
+    // swamping x and y
+    grid_position.x = int(grid_size_.height - y);
+    grid_position.y = int(x);
+  }
+
   // saturate with _img_h and _img_w
   grid_position.x = std::max(grid_position.x, 0);
   grid_position.x = std::min(grid_position.x, grid_size_.height - 1);
@@ -885,8 +907,15 @@ cv::Point2i PathPlanner::coord2grid(const cv::Point2f &_point)
 cv::Point2f PathPlanner::grid2coord(const cv::Point2i &_point)
 {
   cv::Point2f coord_point;
-  coord_point.x = (double)_point.y * occmap_resolution_;
-  coord_point.y = (double)(grid_size_.height - _point.x) * occmap_resolution_;
+
+  if (center_origin_) {
+    coord_point.x = (double)(_point.y - grid_size_.width/2.0) * occmap_resolution_;
+    coord_point.y = (double)(grid_size_.height/2.0 - _point.x) * occmap_resolution_;
+  }
+  else {
+    coord_point.x = (double)_point.y * occmap_resolution_;
+    coord_point.y = (double)(grid_size_.height - _point.x) * occmap_resolution_;
+  }
   return coord_point;
 }
 
