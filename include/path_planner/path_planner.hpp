@@ -1,20 +1,20 @@
 #ifndef PATH_PLANNER_HPP_
 #define PATH_PLANNER_HPP_
 
-#include <opencv2/core/types.hpp>
-#include <ros/ros.h>
-#include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 #include <laser_geometry/laser_geometry.h>
+#include <opencv2/core/types.hpp>
+#include <opencv2/opencv.hpp>
+#include <ros/ros.h>
 // #include <tf2_ros/transform_listener.h>
 
-#include <std_msgs/Bool.h>
-#include <std_srvs/SetBool.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud.h>
-#include <geometry_msgs/PoseStamped.h>
+#include <std_msgs/Bool.h>
+#include <std_srvs/SetBool.h>
 #include <trajectory_msgs/MultiDOFJointTrajectoryPoint.h>
 
 #include <Eigen/Dense>
@@ -38,11 +38,11 @@
 #define CONTROLNODE_SRV "path_planning/run"
 #define SETGOAL_SRV "path_planning/set_goal"
 
-#define LASER2BIN_TH 100  // 100 // [0-255]
-#define DIST2BIN_TH 0.7   // [0.0-1.0]
+#define LASER2BIN_TH 100 // 100 // [0-255]
+#define DIST2BIN_TH 0.7  // [0.0-1.0]
 
 class PathPlanner {
-  public:
+public:
   PathPlanner();
   ~PathPlanner();
   void run();
@@ -73,22 +73,23 @@ class PathPlanner {
 
   void laserscanCallback(const sensor_msgs::LaserScan &_msg);
   void positionCallback(const nav_msgs::Odometry &_msg);
-  bool controlNodeSrv(std_srvs::SetBool::Request &_request, std_srvs::SetBool::Response &_response);
+  bool controlNodeSrv(std_srvs::SetBool::Request &_request,
+                      std_srvs::SetBool::Response &_response);
   bool setGoalSrv(path_planner::setGoalPoint::Request &_request,
                   path_planner::setGoalPoint::Response &_response);
   void endNavigation();
 
   // PARAMETERS
-  float img_resolution_ = 0.1; // meters/pixel
-  float occmap_resolution_ = 0.5; // meters/pixel
-  float security_distance_th_ = 2.0; // meters
-  float z_min_th_ = 1.0; // meters
-  float fly_height_ = 2.0; // meters
-  float next_point_reached_dist_ = 0.5; //meters
-  float goal_reached_dist_ = 1.0; //meters
-  float drone_max_distance_ = 5.0; // meters
-  float goal_max_distance_ = 5.0; // meters
-  float ego_radious_ = 2.5; // meters
+  float img_resolution_ = 0.1;          // meters/pixel
+  float occmap_resolution_ = 0.5;       // meters/pixel
+  float security_distance_th_ = 2.0;    // meters
+  float z_min_th_ = 1.0;                // meters
+  float fly_height_ = 2.0;              // meters
+  float next_point_reached_dist_ = 0.5; // meters
+  float goal_reached_dist_ = 1.0;       // meters
+  float drone_max_distance_ = 5.0;      // meters
+  float goal_max_distance_ = 5.0;       // meters
+  float ego_radious_ = 2.5;             // meters
   std::string ref_frame_ = "world";
   bool check_future_point_ = false;
   int max_attempts_ = 5;
@@ -129,34 +130,34 @@ class PathPlanner {
   void sendWaypoint(const cv::Point2f &_next_point, const float _sending_yaw);
   void prepareNewAttempt();
   bool cellIsAvailable(const cv::Point2i &_cell);
-  cv::Point2i findNearestAvailableCell(const cv::Point2i &_cell, const float _max_distance);
+  cv::Point2i findNearestAvailableCell(const cv::Point2i &_cell,
+                                       const float _max_distance);
 
   void sendMap(const cv::Mat &_map);
-  void showMap(const cv::Mat &_map, const std::string &_map_name, const bool _add_drone);
+  void showMap(const cv::Mat &_map, const std::string &_map_name,
+               const bool _add_drone);
 
   cv::Mat generateShowImg(const cv::Mat &_img, const cv::Point2i &_drone_px);
   cv::Point2i coord2img(const float _x, const float _y);
   cv::Point2i coord2grid(const cv::Point2f &_point);
   cv::Point2f grid2coord(const cv::Point2i &_point);
 
-  cv::Mat generatePathImg(const cv::Mat &_map, 
-                        const cv::Point2i &_drone_px,
-                        const cv::Point2i &_goal_px,
-                        const std::vector<cv::Point2i> &_path,
-                        const std::vector<cv::Point2i> &_waypoints);
+  cv::Mat generatePathImg(const cv::Mat &_map, const cv::Point2i &_drone_px,
+                          const cv::Point2i &_goal_px,
+                          const std::vector<cv::Point2i> &_path,
+                          const std::vector<cv::Point2i> &_waypoints);
 };
 
-trajectory_msgs::MultiDOFJointTrajectoryPoint createTrajectoryFromPointMsg(
-    const cv::Point2f &_point, 
-    const float _height, 
-    const float _yaw);
-geometry_msgs::TwistStamped createSpeedReferenceMsg(cv::Point2d _current_position,
-                                                    cv::Point2d _target_position, 
-                                                    float _speed);
-geometry_msgs::PoseStamped createPoseStampedMsg(const cv::Point2f &_point, 
+trajectory_msgs::MultiDOFJointTrajectoryPoint
+createTrajectoryFromPointMsg(const cv::Point2f &_point, const float _height,
+                             const float _yaw);
+geometry_msgs::TwistStamped
+createSpeedReferenceMsg(cv::Point2d _current_position,
+                        cv::Point2d _target_position, float _speed);
+geometry_msgs::PoseStamped createPoseStampedMsg(const cv::Point2f &_point,
                                                 const float _height,
-                                                const float _yaw); 
+                                                const float _yaw);
 
 void showCombinedMap(std::vector<cv::Mat> maps, std::string window_name);
 
-#endif  // PATH_PLANNER_HPP_
+#endif // PATH_PLANNER_HPP_
