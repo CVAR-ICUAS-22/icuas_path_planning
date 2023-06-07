@@ -610,7 +610,8 @@ void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
       img_point = coord2img(point.x, point.y);
       // FILTER LASER AT LIMIT OF IMAGE
       if (img_point.x == 0 || img_point.y == 0 ||
-          img_point.x == img_size_.height || img_point.y == img_size_.width) {
+          img_point.x == (img_size_.height - 1) ||
+          img_point.y == (img_size_.width - 1)) {
         continue;
       }
       local_laser_map.at<uchar>(img_point.x, img_point.y) = 255;
