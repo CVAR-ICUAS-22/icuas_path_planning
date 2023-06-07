@@ -227,6 +227,10 @@ void PathPlanner::run()
 
 void PathPlanner::endNavigation()
 {
+  if (speed_controller_)
+  {
+    pose_pub_.publish(createPoseStampedMsg(drone_position_, fly_height_, 0.0));
+  }
   std_msgs::Bool msg;
   msg.data = goal_reached_;
   has_ended_pub_.publish(msg);
