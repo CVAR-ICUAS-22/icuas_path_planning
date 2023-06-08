@@ -44,6 +44,8 @@ PathPlanner::PathPlanner() : it_(nh_) {
   nh_.getParam("path_planner/speed_controller", speed_controller_);
   nh_.getParam("path_planner/max_control_speed", max_control_speed_);
 
+  nh_.getParam("path_planner/laser_filter_margin", laser_filter_margin_);
+
   ROS_INFO("map_h: %.2f", map_h);
   ROS_INFO("map_w: %.2f", map_w);
   ROS_INFO("img_resolution: %.2f", img_resolution_);
@@ -59,6 +61,9 @@ PathPlanner::PathPlanner() : it_(nh_) {
   ROS_INFO("security distance: %.2f", security_distance);
   ROS_INFO("egomap distance: %.2f", ego_radious_);
   ROS_INFO("next_point_reached_dist: %.2f", next_point_reached_dist_);
+
+  ROS_INFO("laser_filter_margin: %d", laser_filter_margin_);
+
   // SPEED CONTROLLER
   std::string controller_str = speed_controller_ ? "SPEED" : "POSITION";
   ROS_INFO("controller: %s", controller_str.c_str());
@@ -611,10 +616,10 @@ void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
     if (point.z > z_min_th_ && point.z < z_max_th_) {
       img_point = coord2img(point.x, point.y);
       // FILTER LASER AT LIMIT OF IMAGE
-      if (img_point.x <= (0 + LASER_FILTER_MARGIN) ||
-          img_point.y <= (0 + LASER_FILTER_MARGIN) ||
-          img_point.x >= (img_size_.height - 1 - LASER_FILTER_MARGIN) ||
-          img_point.y >= (img_size_.width - 1 - LASER_FILTER_MARGIN)) {
+      if (img_point.x <= (0 + laser_filter_margin_) ||
+          img_point.y <= (0 + laser_filter_margin_) ||
+          img_point.x >= (img_size_.height - 1 - laser_filter_margin_) ||
+          img_point.y >= (img_size_.width - 1 - laser_filter_margin_)) {
         continue;
       }
       local_laser_map.at<uchar>(img_point.x, img_point.y) = 255;

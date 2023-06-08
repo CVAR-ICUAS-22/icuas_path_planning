@@ -98,6 +98,8 @@ public:
   int attempts_count_ = 0;
   bool center_origin_ = true;
 
+  int laser_filter_margin_ = LASER_FILTER_MARGIN;
+
   bool run_node_ = false;
   bool goal_reached_ = false;
   bool no_solution_ = false;

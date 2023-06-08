@@ -20,6 +20,8 @@
   <arg name="speed_controller" default="false" />
   <arg name="max_control_speed" default="1.0" />
 
+  <arg name="laser_filter_margin" default="0" />
+
   <arg name="filter_sensor" default="false" />
 
   <arg name="namespace"/>
@@ -61,6 +63,8 @@
     <param name="next_point_reached_dist" type="double" value="$(arg next_point_reached_dist)"/>
     <param name="speed_controller" type="bool" value="$(arg speed_controller)"/>
     <param name="max_control_speed" type="double" value="$(arg max_control_speed)"/>
+
+    <param name="laser_filter_margin" type="int" value="$(arg laser_filter_margin)"/>
   </node>
 
   </group>
