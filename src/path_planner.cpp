@@ -565,7 +565,7 @@ void show_image_resized(const std::string &_title, const cv::Mat &_image) {
 cv::Mat &PathPlanner::filterLaserMap(cv::Mat &mat) {
   if (!prev_mat_ptr) {
     prev_mat_ptr = new cv::Mat();
-    prev_mat_ptr = cv::Mat::zeros(mat.size(), mat.type());
+    *prev_mat_ptr = cv::Mat::zeros(mat.size(), mat.type());
   }
   cv::Mat &prev_mat = *prev_mat_ptr;
   // static cv::Mat prev_mat = cv::Mat::zeros(mat.size(), mat.type());
