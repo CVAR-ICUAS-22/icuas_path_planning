@@ -72,6 +72,7 @@ public:
   laser_geometry::LaserProjection laser_projector_;
   AStarPlanner planner_algorithm_;
 
+  cv::Mat &filterLaserMap(cv::Mat &mat);
   void laserscanCallback(const sensor_msgs::LaserScan &_msg);
   void positionCallback(const nav_msgs::Odometry &_msg);
   bool controlNodeSrv(std_srvs::SetBool::Request &_request,
