@@ -21,6 +21,7 @@
   <arg name="max_control_speed" default="1.0" />
 
   <arg name="laser_filter_margin" default="0" />
+  <arg name="reset_occ_map_enabled" default="false" />
 
   <arg name="filter_sensor" default="false" />
 
@@ -65,6 +66,7 @@
     <param name="max_control_speed" type="double" value="$(arg max_control_speed)"/>
 
     <param name="laser_filter_margin" type="int" value="$(arg laser_filter_margin)"/>
+    <param name="reset_occ_map_enabled" type="bool" value="$(arg reset_occ_map_enabled)"/>
   </node>
 
   </group>

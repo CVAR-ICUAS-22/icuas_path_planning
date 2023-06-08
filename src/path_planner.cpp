@@ -45,6 +45,7 @@ PathPlanner::PathPlanner() : it_(nh_) {
   nh_.getParam("path_planner/max_control_speed", max_control_speed_);
 
   nh_.getParam("path_planner/laser_filter_margin", laser_filter_margin_);
+  nh_.getParam("path_planner/reset_occ_map_enabled", reset_occ_map_enabled_);
 
   ROS_INFO("map_h: %.2f", map_h);
   ROS_INFO("map_w: %.2f", map_w);
@@ -63,6 +64,9 @@ PathPlanner::PathPlanner() : it_(nh_) {
   ROS_INFO("next_point_reached_dist: %.2f", next_point_reached_dist_);
 
   ROS_INFO("laser_filter_margin: %d", laser_filter_margin_);
+  if (reset_occ_map_enabled_) {
+    ROS_INFO("Enable topic to reset occupancy map");
+  }
 
   // SPEED CONTROLLER
   std::string controller_str = speed_controller_ ? "SPEED" : "POSITION";
@@ -236,10 +240,23 @@ void PathPlanner::endNavigation() {
   msg.data = goal_reached_;
   has_ended_pub_.publish(msg);
   ROS_INFO("End navigation");
+
+  if (goal_reached_ && reset_occ_map_enabled_) {
+    ROS_INFO("Reset Occupancy Map");
+    resetOccupancyMap();
+  }
+
   // current_path_.clear();
   // ref_waypoints_.clear();
   goal_reached_ = false;
   // run_node_ = false; // This should works, but doesnt
+}
+
+void PathPlanner::resetOccupancyMap() {
+  laser_map_ =
+      cv::Mat(img_size_.height, img_size_.width, CV_8UC1, cv::Scalar(0));
+  occupancy_map_ =
+      cv::Mat::ones(grid_size_.height, grid_size_.width, CV_8UC1) * 255;
 }
 
 void PathPlanner::prepareNewAttempt() {

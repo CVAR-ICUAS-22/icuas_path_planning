@@ -99,6 +99,7 @@ public:
   bool center_origin_ = true;
 
   int laser_filter_margin_ = LASER_FILTER_MARGIN;
+  bool reset_occ_map_enabled_ = false;
 
   bool run_node_ = false;
   bool goal_reached_ = false;
@@ -128,6 +129,7 @@ public:
   // End of SPEED_CONTROLLER
 
   void generateOccupancyMap();
+  void resetOccupancyMap();
   void checkCurrentPath();
   void generateNewPath();
   void optimizePath();
