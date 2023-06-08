@@ -121,7 +121,7 @@ public:
   std::vector<cv::Point2i> current_path_;
   std::vector<cv::Point2i> ref_waypoints_;
 
-  cv::Mat prev_mat;
+  cv::Mat *prev_mat_ptr;
 
   // Begin of SPEED_CONTROLLER
   ros::Publisher speed_control_pub_;

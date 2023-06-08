@@ -85,10 +85,6 @@ PathPlanner::PathPlanner() : it_(nh_) {
       cv::Mat::ones(grid_size_.height, grid_size_.width, CV_8UC1) * 255;
   security_distance_th_ = security_distance / img_resolution_;
 
-  cv::Mat local_laser_map_ =
-      cv::Mat::zeros(laser_map_.size(), laser_map_.type());
-  cv::Mat prev_mat = cv::Mat::zeros(mat.size(), mat.type());
-
   // SPEED CONTROLLER
   if (speed_controller_) {
     speed_control_pub_ =
@@ -567,6 +563,10 @@ void show_image_resized(const std::string &_title, const cv::Mat &_image) {
 }
 
 cv::Mat &filterLaserMap(cv::Mat &mat) {
+  if (!prev_mat_ptr) {
+    prev_mat_ptr = new cv::Mat::zeros(mat.size(), mat.type());
+  }
+  cv::Mat &prev_mat = *prev_mat_ptr;
   // static cv::Mat prev_mat = cv::Mat::zeros(mat.size(), mat.type());
   cv::Mat out = cv::Mat::zeros(mat.size(), mat.type());
 
