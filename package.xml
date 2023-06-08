@@ -14,7 +14,7 @@
   <depend>geometry_msgs</depend> 
   <depend>trajectory_msgs</depend> 
   <depend>cv_bridge</depend>
-  <depend>backward_ros</depend>
+  <!-- <depend>backward_ros</depend> -->
   <depend>tf</depend>
   <depend>laser_geometry</depend>
   <depend>image_transport</depend>

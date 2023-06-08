@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 3.0.2)
 set(PROJECT_NAME path_planner)
 project(${PROJECT_NAME})
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_BUILD_TYPE DebWithRelInfo)
+# set(CMAKE_BUILD_TYPE DebWithRelInfo)
+set(CMAKE_BUILD_TYPE Release)
 
 set(PROJECT_DEPENDENCIES 
   roscpp  
@@ -17,8 +18,8 @@ set(PROJECT_DEPENDENCIES
   image_transport
   message_generation
   message_runtime
-  backward_ros
 )
+  # backward_ros
 
 find_package(catkin REQUIRED COMPONENTS
   ${PROJECT_DEPENDENCIES}
