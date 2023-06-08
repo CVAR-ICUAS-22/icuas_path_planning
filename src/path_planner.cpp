@@ -569,7 +569,7 @@ cv::Mat &PathPlanner::filterLaserMap(cv::Mat &mat) {
   }
   cv::Mat &prev_mat = *prev_mat_ptr;
   // static cv::Mat prev_mat = cv::Mat::zeros(mat.size(), mat.type());
-  cv::Mat out = cv::Mat::zeros(mat.size(), mat.type());
+  // cv::Mat out = cv::Mat::zeros(mat.size(), mat.type());
 
   const int maximum_value = 255;
   const float value_to_set = 0.6;
@@ -602,7 +602,7 @@ cv::Mat &PathPlanner::filterLaserMap(cv::Mat &mat) {
   prev_mat = cv::max(prev_mat, 0.0f);
   prev_mat = cv::min(prev_mat, maximum_value);
 
-  auto out = prev_mat.clone();
+  cv::Mat out = prev_mat.clone();
   cv::threshold(out, out, threshold, maximum_value, cv::THRESH_BINARY);
   return out;
 }
