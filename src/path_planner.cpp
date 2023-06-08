@@ -65,7 +65,7 @@ PathPlanner::PathPlanner() : it_(nh_) {
 
   ROS_INFO("laser_filter_margin: %d", laser_filter_margin_);
   if (reset_occ_map_enabled_) {
-    ROS_INFO("Enable topic to reset occupancy map");
+    ROS_INFO("Enable flag to reset occupancy map");
   }
 
   // SPEED CONTROLLER
