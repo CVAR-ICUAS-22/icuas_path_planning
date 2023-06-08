@@ -84,6 +84,11 @@ PathPlanner::PathPlanner() : it_(nh_) {
   occupancy_map_ =
       cv::Mat::ones(grid_size_.height, grid_size_.width, CV_8UC1) * 255;
   security_distance_th_ = security_distance / img_resolution_;
+
+  cv::Mat local_laser_map_ =
+      cv::Mat::zeros(laser_map_.size(), laser_map_.type());
+  cv::Mat prev_mat = cv::Mat::zeros(mat.size(), mat.type());
+
   // SPEED CONTROLLER
   if (speed_controller_) {
     speed_control_pub_ =
@@ -562,8 +567,8 @@ void show_image_resized(const std::string &_title, const cv::Mat &_image) {
 }
 
 cv::Mat &filterLaserMap(cv::Mat &mat) {
-  static cv::Mat prev_mat = cv::Mat::zeros(mat.size(), mat.type());
-  static cv::Mat out = cv::Mat::zeros(mat.size(), mat.type());
+  // static cv::Mat prev_mat = cv::Mat::zeros(mat.size(), mat.type());
+  cv::Mat out = cv::Mat::zeros(mat.size(), mat.type());
 
   const int maximum_value = 255;
   const float value_to_set = 0.6;
@@ -596,7 +601,7 @@ cv::Mat &filterLaserMap(cv::Mat &mat) {
   prev_mat = cv::max(prev_mat, 0.0f);
   prev_mat = cv::min(prev_mat, maximum_value);
 
-  out = prev_mat.clone();
+  auto out = prev_mat.clone();
   cv::threshold(out, out, threshold, maximum_value, cv::THRESH_BINARY);
   return out;
 }
@@ -626,7 +631,7 @@ void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
   laser_projector_.transformLaserScanToPointCloud(ref_frame_, laser_filtered,
                                                   point_cloud, tf_listener_);
 
-  static cv::Mat local_laser_map =
+  cv::Mat local_laser_map =
       cv::Mat::zeros(laser_map_.size(), laser_map_.type());
   cv::Point2i img_point;
   for (auto point : point_cloud.points) {
@@ -645,7 +650,6 @@ void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
   }
 
   laser_map_ = filterLaserMap(local_laser_map);
-  local_laser_map = cv::Mat::zeros(laser_map_.size(), laser_map_.type());
 }
 
 void PathPlanner::positionCallback(const nav_msgs::Odometry &_msg) {
