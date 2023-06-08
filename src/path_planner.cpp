@@ -567,7 +567,7 @@ cv::Mat PathPlanner::filterLaserMap(cv::Mat &mat) {
     prev_mat_ptr = new cv::Mat();
     *prev_mat_ptr = cv::Mat::zeros(mat.size(), mat.type());
   }
-  cv::Mat prev_mat = *prev_mat_ptr;
+  // cv::Mat prev_mat = *prev_mat_ptr;
   // static cv::Mat prev_mat = cv::Mat::zeros(mat.size(), mat.type());
   // cv::Mat out = cv::Mat::zeros(mat.size(), mat.type());
 
@@ -586,23 +586,23 @@ cv::Mat PathPlanner::filterLaserMap(cv::Mat &mat) {
   ROS_INFO_ONCE("Filtering occupancy map");
 
   cv::Mat prev_mat_free_space;
-  cv::threshold(prev_mat, prev_mat_free_space, value_to_set * maximum_value, 1,
+  cv::threshold(*prev_mat_ptr, prev_mat_free_space, value_to_set * maximum_value, 1,
                 cv::THRESH_BINARY_INV);
   cv::Mat combined_mask = cv::Mat::zeros(mat.size(), mat.type());
   cv::multiply(prev_mat_free_space, free_space_mask, combined_mask);
   cv::multiply(combined_mask, cv::Scalar(decrement_per_free * maximum_value),
                combined_mask);
-  cv::subtract(prev_mat, combined_mask, prev_mat);
+  cv::subtract(*prev_mat_ptr, combined_mask, *prev_mat_ptr);
 
   cv::multiply(obstacle_mask,
                cv::Scalar(increment_per_obstacle * maximum_value),
                obstacle_mask);
-  cv::add(prev_mat, obstacle_mask, prev_mat);
+  cv::add(*prev_mat_ptr, obstacle_mask,*prev_mat_ptr);
 
-  prev_mat = cv::max(prev_mat, 0.0f);
-  prev_mat = cv::min(prev_mat, maximum_value);
+  *prev_mat_ptr = cv::max(*prev_mat_ptr, 0.0f);
+  *prev_mat_ptr= cv::min(*prev_mat_ptr, maximum_value);
 
-  cv::Mat out = prev_mat.clone();
+  cv::Mat out = prev_mat_ptr->clone();
   cv::threshold(out, out, threshold, maximum_value, cv::THRESH_BINARY);
   return out;
 }
