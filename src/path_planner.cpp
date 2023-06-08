@@ -566,7 +566,7 @@ cv::Mat PathPlanner::filterLaserMap(cv::Mat &mat) {
   if (!prev_mat_ptr) {
     prev_mat_ptr = new cv::Mat(cv::Mat::zeros(mat.size(), mat.type()));
   }
-  cv::Mat &prev_mat = *prev_mat_ptr;
+  cv::Mat prev_mat = *prev_mat_ptr;
   // static cv::Mat prev_mat = cv::Mat::zeros(mat.size(), mat.type());
   // cv::Mat out = cv::Mat::zeros(mat.size(), mat.type());
 
