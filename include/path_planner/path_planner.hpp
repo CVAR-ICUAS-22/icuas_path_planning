@@ -85,6 +85,7 @@ public:
   float occmap_resolution_ = 0.5;       // meters/pixel
   float security_distance_th_ = 2.0;    // meters
   float z_min_th_ = 1.0;                // meters
+  float z_max_th_ = 2.0;                // meters
   float fly_height_ = 2.0;              // meters
   float next_point_reached_dist_ = 0.5; // meters
   float goal_reached_dist_ = 1.0;       // meters

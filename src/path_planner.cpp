@@ -32,6 +32,7 @@ PathPlanner::PathPlanner() : it_(nh_) {
   nh_.getParam("path_planner/occmap_resolution", occmap_resolution_);
   nh_.getParam("path_planner/center_origin", center_origin_);
   nh_.getParam("path_planner/z_min_th", z_min_th_);
+  nh_.getParam("path_planner/z_max_th", z_max_th_);
   nh_.getParam("path_planner/ref_frame", ref_frame_);
 
   nh_.getParam("path_planner/fly_height", fly_height_);
@@ -48,6 +49,7 @@ PathPlanner::PathPlanner() : it_(nh_) {
   ROS_INFO("img_resolution: %.2f", img_resolution_);
   ROS_INFO("occmap_resolution: %.2f", occmap_resolution_);
   ROS_INFO("z_min_th: %.2f", z_min_th_);
+  ROS_INFO("z_max_th: %.2f", z_max_th_);
   ROS_INFO("ref_frame: %s", ref_frame_.c_str());
   if (center_origin_) {
     ROS_INFO("Map origin centered");
@@ -606,7 +608,7 @@ void PathPlanner::laserscanCallback(const sensor_msgs::LaserScan &_msg) {
       cv::Mat::zeros(laser_map_.size(), laser_map_.type());
   cv::Point2i img_point;
   for (auto point : point_cloud.points) {
-    if (point.z > z_min_th_) {
+    if (point.z > z_min_th_ && point.z < z_max_th_) {
       img_point = coord2img(point.x, point.y);
       // FILTER LASER AT LIMIT OF IMAGE
       if (img_point.x <= (0 + LASER_FILTER_MARGIN) ||
