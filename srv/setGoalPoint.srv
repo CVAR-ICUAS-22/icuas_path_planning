@@ -1,4 +1,0 @@
-geometry_msgs/PointStamped goal # goal point in m
----
-bool success   # indicate successful run of triggered service
-string message # informational, e.g. for error messages

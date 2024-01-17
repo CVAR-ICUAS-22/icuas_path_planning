@@ -1,11 +1,12 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>path_planner</name>
+  <name>icuas_path_planner</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="perezsaura.david@gmail.com">cvar</maintainer>
-  <license>TODO: License declaration</license>
+  <description>TODO</description>
 
+  <maintainer email="cvar.upm3@gmail.com">CVAR-UPM</maintainer>
+
+  <license>TODO</license>
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>roscpp</depend>
@@ -13,13 +14,8 @@
   <depend>sensor_msgs</depend> 
   <depend>geometry_msgs</depend> 
   <depend>trajectory_msgs</depend> 
-  <depend>cv_bridge</depend>
-  <depend>tf</depend>
-  <depend>laser_geometry</depend>
-  <depend>image_transport</depend>
-  <depend>message_generation</depend>
-  <depend>message_runtime</depend>
-  
-  <export></export>
+	<depend>mav_msgs</depend>
+  <depend>icuas_msgs</depend>
+	<depend>tf2_ros</depend>
   
 </package>

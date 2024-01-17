@@ -1,0 +1,7 @@
+<launch>
+
+  <arg name="namespace" />
+  <group ns="$(arg namespace)">
+    <node name="icuas_path_planner" pkg="icuas_path_planner" type="icuas_path_planner_node" output="screen"/>
+  </group>
+</launch>
