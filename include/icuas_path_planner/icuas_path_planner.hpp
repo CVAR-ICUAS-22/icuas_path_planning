@@ -55,6 +55,7 @@ private:
   // ROS Publisher
   ros::Publisher motion_reference_pose_pub_;
   ros::Publisher has_ended_pub_;
+  std_msgs::Bool has_ended_msg_;
 
   // ROS Subscribers
   ros::Subscriber odom_sub_;

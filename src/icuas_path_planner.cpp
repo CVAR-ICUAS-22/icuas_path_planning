@@ -38,7 +38,8 @@ PathPlanner::PathPlanner() {
 
   // ROS Publisher
   // Creates has ended publisher
-  has_ended_pub_ = nh_.advertise<std_msgs::Bool>("path_planning/has_ended", 1);
+  has_ended_pub_      = nh_.advertise<std_msgs::Bool>("path_planning/has_ended", 1);
+  has_ended_msg_.data = true;
 
   // Creates controller publisher
   motion_reference_pose_pub_ =
@@ -58,8 +59,7 @@ bool PathPlanner::goNode(icuas_msgs::GoNode::Request &req, icuas_msgs::GoNode::R
   geometry_msgs::PoseStamped waypoint;
   switch (req.node_id) {
     case 0:
-      waypoint =
-          generatePoseStamped(initial_position_.x, initial_position_.y, initial_position_.z, M_PI);
+      waypoint = generatePoseStamped(initial_position_.x, initial_position_.y, 1.0, M_PI);
       break;
     case 1:
       waypoint = generatePoseStamped(1.0, 5.0, 2.0, M_PI_2);
@@ -80,10 +80,11 @@ bool PathPlanner::goNode(icuas_msgs::GoNode::Request &req, icuas_msgs::GoNode::R
   motion_reference_pose_ = path_.front();
 
   ROS_INFO("Go Node callback - Going to node %d", req.node_id);
+  ROS_INFO("Go Node callback - Going to position (%f, %f, %f)", waypoint.pose.position.x,
+           waypoint.pose.position.y, waypoint.pose.position.z);
 
-  std_msgs::Bool has_ended_msg;
-  has_ended_msg.data = false;
-  has_ended_pub_.publish(has_ended_msg);
+  has_ended_msg_.data = true;
+  has_ended_pub_.publish(has_ended_msg_);
   ROS_INFO("Go Node callback - has_ended published");
 
   return true;
@@ -100,11 +101,16 @@ void PathPlanner::odomCallback(const nav_msgs::Odometry::ConstPtr &msg) {
 }
 
 void PathPlanner::run() {
+  has_ended_pub_.publish(has_ended_msg_);
+
   if (!odom_received_) {
     return;
   }
 
   if (checkFinished()) {
+    odom_received_      = false;
+    has_ended_msg_.data = true;
+    has_ended_pub_.publish(has_ended_msg_);
     return;
   }
   motion_reference_pose_pub_.publish(path_.front());
@@ -114,10 +120,6 @@ bool PathPlanner::checkFinished() {
   // Check if the next point is reached
   if (odom_received_) {
     if (path_.size() == 0) {
-      odom_received_ = false;
-      std_msgs::Bool has_ended_msg;
-      has_ended_msg.data = true;
-      has_ended_pub_.publish(has_ended_msg);
       return true;
     }
 
@@ -129,6 +131,11 @@ bool PathPlanner::checkFinished() {
     if (distance < GO_TO_THRESHOLD) {
       ROS_INFO("Point reached");
       path_.pop_front();
+
+      // Check if was the last point
+      if (path_.size() == 0) {
+        return true;
+      }
     }
   }
   return false;
