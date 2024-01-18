@@ -40,7 +40,8 @@
 #include <std_msgs/Bool.h>
 #include <tf/tf.h>
 
-#define GO_TO_THRESHOLD 0.5
+#define GO_TO_THRESHOLD 0.2
+#define YAW_THRESHOLD 0.1
 
 namespace icuas_path_planning {
 
@@ -82,6 +83,9 @@ private:
 };
 
 geometry_msgs::PoseStamped generatePoseStamped(double x, double y, double z, double yaw);
+double quaternionToYaw(geometry_msgs::Quaternion quaternion);
+double wrapAngle0To2Pi(const double theta);
+double angleMinError(const double theta1, const double theta2);
 
 }  // namespace icuas_path_planning
 

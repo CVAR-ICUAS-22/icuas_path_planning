@@ -57,14 +57,19 @@ bool PathPlanner::goNode(icuas_msgs::GoNode::Request &req, icuas_msgs::GoNode::R
 
   res.success = true;
   geometry_msgs::PoseStamped waypoint;
+  path_.clear();
   switch (req.node_id) {
     case 0:
+      waypoint = generatePoseStamped(initial_position_.x, initial_position_.y, 2.0, 0.0);
+      path_.push_back(waypoint);
       waypoint = generatePoseStamped(initial_position_.x, initial_position_.y, 1.0, M_PI);
       break;
     case 1:
       waypoint = generatePoseStamped(1.0, 5.0, 2.0, M_PI_2);
       break;
     case 2:
+      waypoint = generatePoseStamped(5.0, 5.5, 3.5, 0.0);
+      path_.push_back(waypoint);
       waypoint = generatePoseStamped(10.0, 6.0, 5.0, -M_PI_2);
       break;
     case 3:
@@ -74,16 +79,16 @@ bool PathPlanner::goNode(icuas_msgs::GoNode::Request &req, icuas_msgs::GoNode::R
       res.success = false;
       break;
   }
-
-  path_.clear();
   path_.push_back(waypoint);
   motion_reference_pose_ = path_.front();
 
   ROS_INFO("Go Node callback - Going to node %d", req.node_id);
-  ROS_INFO("Go Node callback - Going to position (%f, %f, %f)", waypoint.pose.position.x,
-           waypoint.pose.position.y, waypoint.pose.position.z);
+  for (auto &pose : path_) {
+    ROS_INFO("Go Node callback - WP position: (%f, %f, %f) and yaw: %f", pose.pose.position.x,
+             pose.pose.position.y, pose.pose.position.z, quaternionToYaw(pose.pose.orientation));
+  }
 
-  has_ended_msg_.data = true;
+  has_ended_msg_.data = false;
   has_ended_pub_.publish(has_ended_msg_);
   ROS_INFO("Go Node callback - has_ended published");
 
@@ -108,7 +113,6 @@ void PathPlanner::run() {
   }
 
   if (checkFinished()) {
-    odom_received_      = false;
     has_ended_msg_.data = true;
     has_ended_pub_.publish(has_ended_msg_);
     return;
@@ -128,7 +132,11 @@ bool PathPlanner::checkFinished() {
                          pow(path_.front().pose.position.y - current_pose_.position.y, 2) +
                          pow(path_.front().pose.position.z - current_pose_.position.z, 2));
 
-    if (distance < GO_TO_THRESHOLD) {
+    double current_yaw = quaternionToYaw(current_pose_.orientation);
+    double desired_yaw = quaternionToYaw(path_.front().pose.orientation);
+    double yaw_error   = angleMinError(current_yaw, desired_yaw);
+
+    if (distance < GO_TO_THRESHOLD && fabs(yaw_error) < YAW_THRESHOLD) {
       ROS_INFO("Point reached");
       path_.pop_front();
 
@@ -136,6 +144,9 @@ bool PathPlanner::checkFinished() {
       if (path_.size() == 0) {
         return true;
       }
+      ROS_INFO("Next point: (%f, %f, %f) with yaw: %f", path_.front().pose.position.x,
+               path_.front().pose.position.y, path_.front().pose.position.z,
+               quaternionToYaw(path_.front().pose.orientation));
     }
   }
   return false;
@@ -157,6 +168,34 @@ geometry_msgs::PoseStamped generatePoseStamped(double x, double y, double z, dou
   pose.pose.orientation.z = quaternion.z();
   pose.pose.orientation.w = quaternion.w();
   return pose;
+}
+
+double quaternionToYaw(geometry_msgs::Quaternion quaternion) {
+  tf::Quaternion q(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+  tf::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+  return yaw;
+}
+
+double wrapAngle0To2Pi(const double theta) {
+  double theta_wrapped = fmod(theta, 2.0 * M_PI);
+  if (theta_wrapped < 0.0) {
+    theta_wrapped += 2.0 * M_PI;
+  }
+  return theta_wrapped;
+}
+
+double angleMinError(const double theta1, const double theta2) {
+  double theta1_wrapped = wrapAngle0To2Pi(theta1);
+  double theta2_wrapped = wrapAngle0To2Pi(theta2);
+  double error          = theta1_wrapped - theta2_wrapped;
+  if (error > M_PI) {
+    error -= 2.0 * M_PI;
+  } else if (error < -M_PI) {
+    error += 2.0 * M_PI;
+  }
+  return error;
 }
 
 }  // namespace icuas_path_planning
