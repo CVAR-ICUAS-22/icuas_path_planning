@@ -51,7 +51,7 @@ PathPlanner::PathPlanner() {
 
 PathPlanner::~PathPlanner() {}
 
-bool PathPlanner::goNode(icuas_msgs::goNode::Request &req, icuas_msgs::goNode::Response &res) {
+bool PathPlanner::goNode(icuas_msgs::GoNode::Request &req, icuas_msgs::GoNode::Response &res) {
   // TODO(Miguel): implement this
 
   res.success = true;

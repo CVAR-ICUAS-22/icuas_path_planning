@@ -34,7 +34,7 @@
 #include <deque>
 
 #include <geometry_msgs/PoseStamped.h>
-#include <icuas_msgs/goNode.h>
+#include <icuas_msgs/GoNode.h>
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
@@ -73,7 +73,7 @@ public:
   void run();
 
 private:
-  bool goNode(icuas_msgs::goNode::Request &req, icuas_msgs::goNode::Response &res);
+  bool goNode(icuas_msgs::GoNode::Request &req, icuas_msgs::GoNode::Response &res);
 
   void odomCallback(const nav_msgs::Odometry::ConstPtr &msg);
 
